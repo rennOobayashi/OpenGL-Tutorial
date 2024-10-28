@@ -69,11 +69,18 @@ public:
 		}
 		//x, y ,z
 		float vertices[] = {
-			-0.5f,  -0.5f, 0.0f,
-			0.5f, -0.5f, 0.0f,
-			0.0f,  0.5f, 0.0f
+			-0.4f,  0.5f, 0.0f, //0
+			-0.4f, -0.5f, 0.0f, //1
+			0.4f, 0.5f, 0.0f,   //2
+			0.4f,  -0.5f, 0.0f  //3
 		};
-		unsigned int vbo, vao;
+		//삼각형 점 위치
+		unsigned int indices[] = {
+			0, 1, 2, 
+			1, 2, 3
+		};
+
+		unsigned int vbo, vao, veo;
 		unsigned int vertex_shader;
 		unsigned int fragment_shader;
 		unsigned int shader_program;
@@ -116,6 +123,7 @@ public:
 
 		//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 		glGenBuffers(1, &vbo);
+		glGenBuffers(1, &veo);
 
 		glGenVertexArrays(1, &vao);
 	
@@ -125,6 +133,9 @@ public:
 		//Open이 사용하기 위해 vertex 리스트 복사
 		glBindBuffer(GL_ARRAY_BUFFER, vbo);
 		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veo);
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 		//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 		//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들  사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
@@ -141,7 +152,9 @@ public:
 
 			glUseProgram(shader_program);
 			glBindVertexArray(vao);
-			glDrawArrays(GL_TRIANGLES, 0, 3);
+			//glDrawArrays(GL_TRIANGLES, 0, 4);
+			glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT , 0);
+			glBindVertexArray(0);
 
 			//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 			glfwSwapBuffers(window);
