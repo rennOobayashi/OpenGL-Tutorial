@@ -11,16 +11,16 @@ void openglcode::init() {
 }
 
 void openglcode::set_n_run() {
-	//opengl 3.3¹öÀü »ç¿ë
+	//opengl 3.3ë²„ì „ ì‚¬ìš©
 
-	//¸ŞÀÌÁ® ¹öÀü
+	//ë©”ì´ì ¸ ë²„ì „
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	//¸¶ÀÌ³Ê ¹öÀü
+	//ë§ˆì´ë„ˆ ë²„ì „
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-	//glfw¿¡°Ô core profileÀ» »ç¿ëÇÑ´Ù°í ¾Ë·ÁÁÜ
+	//glfwì—ê²Œ core profile(ê°€ì¥ ê¸°ë³¸ì ì´ê³  í•„ìˆ˜ì ì¸ ì •ë³´)ì„ ì‚¬ìš©í•œë‹¤ê³  ì•Œë ¤ì¤Œ
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	//¸ğµç À©µµ¿ì µ¥ÀÌÅÍ º¸À¯
+	//ëª¨ë“  ìœˆë„ìš° ë°ì´í„° ë³´ìœ 
 
 	GLFWwindow* window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
 	if (window == NULL) {
@@ -31,13 +31,13 @@ void openglcode::set_n_run() {
 	}
 
 	/* Double buffer
-	* ÀÀ¿ë ÇÁ·Î±×·¥ÀÌ single buffer·Î ÀÌ¹ÌÁö¸¦ ±×·ÈÀ» ¶§ ±ôºı°Å¸®´Â Çö»ó
-	* ÀÌ¹ÌÁöÀÇ ÇÈ¼¿À» ÇÑ¹ø¿¡ ±×¸®´Â °ÍÀÌ ¾Æ´Ñ ¿ŞÂÊ À§¿¡¼­ ¿À¸¥ÂÊ ¾Æ·¡¼øÀ¸·Î ±×¸®±â¿¡ ¹ß»ı
-	* ÀÌ¸¦ ÇØ°áÇÏ±â À§ÇØ ¾Õ ¹öÆÛ´Â ÃÖÁ¾ Ãâ·Â ÀÌ¹ÌÁö¸¦, µÚ ¹öÆÛ´Â ¸ğµç ·»´õ¸µ ¸í·É¿¡¼­ ±×¸° µÚ ¾Õ ¹öÆÛ¿Í ±³Ã¼
+	* ì‘ìš© í”„ë¡œê·¸ë¨ì´ single bufferë¡œ ì´ë¯¸ì§€ë¥¼ ê·¸ë ¸ì„ ë•Œ ê¹œë¹¡ê±°ë¦¬ëŠ” í˜„ìƒ
+	* ì´ë¯¸ì§€ì˜ í”½ì…€ì„ í•œë²ˆì— ê·¸ë¦¬ëŠ” ê²ƒì´ ì•„ë‹Œ ì™¼ìª½ ìœ„ì—ì„œ ì˜¤ë¥¸ìª½ ì•„ë˜ìˆœìœ¼ë¡œ ê·¸ë¦¬ê¸°ì— ë°œìƒ
+	* ì´ë¥¼ í•´ê²°í•˜ê¸° ìœ„í•´ ì• ë²„í¼ëŠ” ìµœì¢… ì¶œë ¥ ì´ë¯¸ì§€ë¥¼, ë’¤ ë²„í¼ëŠ” ëª¨ë“  ë Œë”ë§ ëª…ë ¹ì—ì„œ ê·¸ë¦° ë’¤ ì• ë²„í¼ì™€ êµì²´
 	*/
 
 	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
-		//0,0¿¡¼­ ½ÃÀÛ, width,height¿¡¼­ ³¡
+		//0,0ì—ì„œ ì‹œì‘, width,heightì—ì„œ ë
 		glViewport(0, 0, width, height);
 		});
 
@@ -63,9 +63,9 @@ void openglcode::set_n_run() {
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
-		//ÄÃ·¯ ¹öÆÛ(ÀÌ¹ÌÁö ±×¸®±â ¹× È­¸é Ãâ·Â) ±³Ã¼
+		//ì»¬ëŸ¬ ë²„í¼(ì´ë¯¸ì§€ ê·¸ë¦¬ê¸° ë° í™”ë©´ ì¶œë ¥) êµì²´
 		glfwSwapBuffers(window);
-		//ÀÌº¥Æ® È®ÀÎ
+		//ì´ë²¤íŠ¸ í™•ì¸
 		glfwPollEvents();
 	}
 	glDeleteBuffers(0, &vbo);
@@ -81,12 +81,12 @@ void openglcode::mk_shader() {
 	unsigned int fragment_shader;
 	int success;
 
-	//shader »ı¼º, vertex shader¸¦ »ç¿ëÇÏ¹Ç·Î GL_VERTEX_SHADER¸¦ ÆÄ¶ó¹ÌÅÍ(ÀÎ¼ö)·Î ÀÔ·Â
+	//shader ìƒì„±, vertex shaderë¥¼ ì‚¬ìš©í•˜ë¯€ë¡œ GL_VERTEX_SHADERë¥¼ íŒŒë¼ë¯¸í„°(ì¸ìˆ˜)ë¡œ ì…ë ¥
 	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
 
-	//shader °´Ã¼, ¸î °³ÀÇ ¹®ÀÚ¿­·Î µÇ¾îÀÖ´ÂÁö, ½ÇÁ¦ ¼Ò½º ÄÚµå
+	//shader ê°ì²´, ëª‡ ê°œì˜ ë¬¸ìì—´ë¡œ ë˜ì–´ìˆëŠ”ì§€, ì‹¤ì œ ì†ŒìŠ¤ ì½”ë“œ
 	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
-	//ÄÄÆÄÀÏÀÌ ¿Ï·áµÇ¾ú´ÂÁö È®ÀÎ
+	//ì»´íŒŒì¼ì´ ì™„ë£Œë˜ì—ˆëŠ”ì§€ í™•ì¸
 	glCompileShader(vertex_shader);
 
 	glGetProgramiv(vertex_shader, GL_LINK_STATUS, &success);
@@ -105,23 +105,23 @@ void openglcode::mk_shader() {
 		std::cout << "ERROR::FRAGMENT::SHADER::COMPILATION_FAILED\n" << info_log << std::endl;
 	}
 
-	//ÄÄÆÄÀÏµÈ shaderµéÀ» ¿¬°áÇÏ±â À§ÇÑ program °´Ã¼, program °´Ã¼ ID ¸®ÅÏ
+	//ì»´íŒŒì¼ëœ shaderë“¤ì„ ì—°ê²°í•˜ê¸° ìœ„í•œ program ê°ì²´, program ê°ì²´ ID ë¦¬í„´
 	shader_program = glCreateProgram();
 
-	//ÄÄÆÄÀÏÇÑ shader Ã·ºÎ
+	//ì»´íŒŒì¼í•œ shader ì²¨ë¶€
 	glAttachShader(shader_program, vertex_shader);
 	glAttachShader(shader_program, fragment_shader);
-	//shader ¿¬°á
+	//shader ì—°ê²°
 	glLinkProgram(shader_program);
 
-	//shader ¿¬°á ¼º°ø ¿©ºÎ È®ÀÎ
+	//shader ì—°ê²° ì„±ê³µ ì—¬ë¶€ í™•ì¸
 	glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
 	if (!success) {
 		glGetProgramInfoLog(shader_program, 512, NULL, info_log);
 		std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << info_log << std::endl;
 	}
 
-	//¿¬°á ÈÄ Á¦°Å
+	//ì—°ê²° í›„ ì œê±°
 	glDeleteShader(vertex_shader);
 	glDeleteShader(fragment_shader);
 }
@@ -134,30 +134,30 @@ void openglcode::draw_square() {
 		0.4f, 0.5f, 0.0f,   //2
 		0.4f,  -0.5f, 0.0f  //3
 	};
-	//»ï°¢Çü Á¡ À§Ä¡
+	//ì‚¼ê°í˜• ì  ìœ„ì¹˜
 	unsigned int indices[] = {
 		0, 1, 2,
 		1, 2, 3
 	};
 
-	//¹öÆÛ ID »ı¼º, vertex buffer objectÀÇ ¹öÆÛ À¯ÇüÀº GL_ARRAY_BUFFER
+	//ë²„í¼ ID ìƒì„±, vertex buffer objectì˜ ë²„í¼ ìœ í˜•ì€ GL_ARRAY_BUFFER
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &veo);
 
 	glGenVertexArrays(1, &vao);
 
-	//vertex array ¿ÀºêÁ§Æ® ¹Ù¿îµù
+	//vertex array ì˜¤ë¸Œì íŠ¸ ë°”ìš´ë”©
 	glBindVertexArray(vao);
 
-	//OpenÀÌ »ç¿ëÇÏ±â À§ÇØ vertex ¸®½ºÆ® º¹»ç
+	//Openì´ ì‚¬ìš©í•˜ê¸° ìœ„í•´ vertex ë¦¬ìŠ¤íŠ¸ ë³µì‚¬
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-	//OpenGL¿¡°Ô vertex µ¥ÀÌÅÍ¸¦ ¾î¶»°Ô ÇØ¼®ÇÏ´ÂÁö ¾Ë·ÁÁÜ
-	//vertex ¼Ó¼º, vertex ¼Ó¼º Å©±â, µ¥ÀÌÅÍ Å¸ÀÔ, µ¥ÀÌÅÍ Á¤±ÔÈ­ ¿©ºÎ, stride(vertex ¼Ó¼º ¼¼Æ®µé  »çÀÌ°£ °ø¹é), void*Å¸ÀÔÀÌ¹Ç·Î Çüº¯È¯ÇÏ°í À§Ä¡ µ¥ÀÌÅÍ°¡ ¹è¿­ ½ÃÀÛ ºÎºĞ¿¡ ÀÖÀ¸¹Ç·Î 0
+	//OpenGLì—ê²Œ vertex ë°ì´í„°ë¥¼ ì–´ë–»ê²Œ í•´ì„í•˜ëŠ”ì§€ ì•Œë ¤ì¤Œ
+	//vertex ì†ì„±, vertex ì†ì„± í¬ê¸°, ë°ì´í„° íƒ€ì…, ë°ì´í„° ì •ê·œí™” ì—¬ë¶€, stride(vertex ì†ì„± ì„¸íŠ¸ë“¤  ì‚¬ì´ê°„ ê³µë°±), void*íƒ€ì…ì´ë¯€ë¡œ í˜•ë³€í™˜í•˜ê³  ìœ„ì¹˜ ë°ì´í„°ê°€ ë°°ì—´ ì‹œì‘ ë¶€ë¶„ì— ìˆìœ¼ë¯€ë¡œ 0
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
