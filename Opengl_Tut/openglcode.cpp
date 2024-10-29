@@ -54,10 +54,16 @@ void openglcode::set_n_run() {
 
 
 	while (!glfwWindowShouldClose(window)) {
+		float time_value = glfwGetTime();
+		float green_value = (sin(time_value) / 2.0f) + 0.5f; //sin으로 time_value의 값을 0.0 ~ 1.0까지 설정
+		int vertex_color_location = glGetUniformLocation(shader_program, "ourColor"); //outColor의 location확인, -1리턴시 찾기 실패
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shader_program);
+		glUniform4f(vertex_color_location, 0.0f, green_value, 0.0f, 1.0f); // uniform 값 수정 (program 필요)
+
 		glBindVertexArray(vao);
 		//glDrawArrays(GL_TRIANGLES, 0, 4);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -166,3 +172,4 @@ void openglcode::draw_square() {
 	glBindVertexArray(0);
 
 }
+
