@@ -54,18 +54,12 @@ void openglcode::set_n_run() {
 
 
 	while (!glfwWindowShouldClose(window)) {
-		float time_value = glfwGetTime();
-		float green_value = (sin(time_value) / 2.0f) + 0.5f; //sin으로 time_value의 값을 0.0 ~ 1.0까지 설정
-		int vertex_color_location = glGetUniformLocation(shader_program, "ourColor"); //outColor의 location확인, -1리턴시 찾기 실패
-
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glUseProgram(shader_program);
-		glUniform4f(vertex_color_location, 0.0f, green_value, 0.0f, 1.0f); // uniform 값 수정 (program 필요)
 
 		glBindVertexArray(vao);
-		//glDrawArrays(GL_TRIANGLES, 0, 4);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
 
@@ -89,6 +83,8 @@ void openglcode::mk_shader() {
 
 	//shader 생성, vertex shader를 사용하므로 GL_VERTEX_SHADER를 파라미터(인수)로 입력
 	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
+
+
 
 	//shader 객체, 몇 개의 문자열로 되어있는지, 실제 소스 코드
 	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
@@ -135,10 +131,11 @@ void openglcode::mk_shader() {
 void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
-		-0.4f,  0.5f, 0.0f, //0
-		-0.4f, -0.5f, 0.0f, //1
-		0.4f, 0.5f, 0.0f,   //2
-		0.4f,  -0.5f, 0.0f  //3
+		//opsition          //color
+		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, //0
+		-0.4f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, //1
+		 0.4f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, //2
+		 0.4f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f  //3
 	};
 	//삼각형 점 위치
 	unsigned int indices[] = {
@@ -163,9 +160,14 @@ void openglcode::draw_square() {
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
-	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들  사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
+	//위치 attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+
+	//컬러 attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); //offset 지정(3 * sizeof(float))
+	glEnableVertexAttribArray(1);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
