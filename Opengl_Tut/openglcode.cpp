@@ -45,6 +45,7 @@ void openglcode::set_n_run() {
 
 	mk_shader();
 	draw_square();
+	set_texture();
 
 
 	while (!glfwWindowShouldClose(window)) {
@@ -53,6 +54,7 @@ void openglcode::set_n_run() {
 
 		glUseProgram(shader_program);
 
+		//glBindTexture(GL_TEXTURE_2D, texture);
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
@@ -125,16 +127,16 @@ void openglcode::mk_shader() {
 void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
-		//opsition          //color
-		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, //0
-		-0.4f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, //1
-		 0.4f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, //2
-		 0.4f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f  //3
+		//position          //color           //texture pos
+		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, //0
+		-0.4f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, //1
+		 0.4f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, //2
+		 0.4f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f  //3
 	};
 	//삼각형 점 위치
 	unsigned int indices[] = {
-		0, 1, 2,
-		1, 2, 3
+		0, 1, 3,
+		1, 3, 2
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
@@ -156,16 +158,42 @@ void openglcode::draw_square() {
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	//컬러 attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); //offset 지정(3 * sizeof(float))
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float))); //offset 지정(3 * sizeof(float))
 	glEnableVertexAttribArray(1);
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(0);
-
 }
 
+void openglcode::set_texture() {
+	//텍스쳐 갯수, 텍스쳐 배열 저장
+	glGenTextures(1, &texture);
+	//바인딩
+	glBindTexture(GL_TEXTURE_2D, texture);
+
+	//텍스쳐 타겟 지정(2D나 3D등  지정, 설정할 옵션(WRAP)과 적용할 축, 텍스쳐 모드 (위치가 1.0보다 클시 어떻게 반복시킬지, GL_CLAMP_TO_BORDER일 시 glTexParmeterfv를 사용하여 태두리색 또한 설정))
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//텍스쳐 필터링 방법 지정
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //or GL_LINEAR
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //or GL_LINEAR
+	data = stbi_load("brick.png", &width, &height, &color_ch, 0);
+	if (data) {
+		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture\n";
+	}
+	//mipmap 생성 후 이미지 메모리 반환
+	stbi_image_free(data);
+}
