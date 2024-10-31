@@ -1,6 +1,11 @@
-#pragma once
+#ifndef OPENGLCODE_H
+#define OPENGLCODE_H
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#include <iostream>
+#define X 800
+#define Y 600
 
 class openglcode
 {
@@ -40,3 +45,4 @@ public:
 	void set_n_run();
 };
 
+#endif

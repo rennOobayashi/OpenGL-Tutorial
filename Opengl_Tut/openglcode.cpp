@@ -1,10 +1,4 @@
 #include "openglcode.h"
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
-#include <iostream>
-#define X 800
-#define Y 600
 
 void openglcode::init() {
 	glfwInit();
