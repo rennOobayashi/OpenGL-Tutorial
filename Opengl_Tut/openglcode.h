@@ -33,15 +33,16 @@ private:
 		"out vec4 FragColor;\n"
 		"in vec3 ourColor;\n" //Vertex Shader로 입력 받은 입력 변수 (이름과 타입이 같아야 함)
 		"in vec2 texCoord;\n" //Vertex Shader로 입력 받은 입력 변수 (이름과 타입이 같아야 함)
-		"uniform sampler2D ourTexture;\n"
+		"uniform sampler2D Texture1;\n"
+		"uniform sampler2D Texture2;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = texture(ourTexture, texCoord) * vec4(ourColor, 1.0);\n" //텍스쳐 컬러 샘플링을 위해 texture 사용(텍스쳐 sampler, 텍스쳐 컬러 값 샘플링)
+		"FragColor = mix(texture(Texture1, texCoord), texture(Texture2, texCoord), 0.2);\n" //텍스쳐 컬러 샘플링을 위해 texture 사용(텍스쳐 sampler, 텍스쳐 컬러 값 샘플링)
 		"}\0";
 	
 	
 	int width, height, color_ch;
-	unsigned int texture;
+	unsigned int texture1, texture2;
 	unsigned char* data;
 	void set_texture();
 

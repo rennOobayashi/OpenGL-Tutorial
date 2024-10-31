@@ -47,14 +47,16 @@ void openglcode::set_n_run() {
 	draw_square();
 	set_texture();
 
-
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glUseProgram(shader_program);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, texture2);
 
-		//glBindTexture(GL_TEXTURE_2D, texture);
+		glUseProgram(shader_program);
 		glBindVertexArray(vao);
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 		glBindVertexArray(0);
@@ -64,7 +66,9 @@ void openglcode::set_n_run() {
 		//이벤트 확인
 		glfwPollEvents();
 	}
-	glDeleteBuffers(0, &vbo);
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &veo);
 	glDeleteProgram(shader_program);
 
 	glfwTerminate();
@@ -175,17 +179,18 @@ void openglcode::draw_square() {
 
 void openglcode::set_texture() {
 	//텍스쳐 갯수, 텍스쳐 배열 저장
-	glGenTextures(1, &texture);
+	glGenTextures(1, &texture1);
 	//바인딩
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindTexture(GL_TEXTURE_2D, texture1);
 
 	//텍스쳐 타겟 지정(2D나 3D등  지정, 설정할 옵션(WRAP)과 적용할 축, 텍스쳐 모드 (위치가 1.0보다 클시 어떻게 반복시킬지, GL_CLAMP_TO_BORDER일 시 glTexParmeterfv를 사용하여 태두리색 또한 설정))
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	//텍스쳐 필터링 방법 지정
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST); //or GL_LINEAR
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //or GL_LINEAR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //or GL_LINEAR
-	data = stbi_load("brick.png", &width, &height, &color_ch, 0);
+	data = stbi_load("watashi.png", &width, &height, &color_ch, 0);
+	std::cout << width << ", " << height << std::endl;
 	if (data) {
 		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
@@ -195,5 +200,31 @@ void openglcode::set_texture() {
 		std::cout << "Failed to load texture\n";
 	}
 	//mipmap 생성 후 이미지 메모리 반환
+
 	stbi_image_free(data);
+
+	glGenTextures(1, &texture2);
+	glBindTexture(GL_TEXTURE_2D, texture2);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	data = stbi_load("watashi.png", &width, &height, &color_ch, 0);
+	std::cout << width << ", " << height << std::endl;
+	if (data) {
+		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else {
+		std::cout << "Failed to load texture\n";
+	}
+	//mipmap 생성 후 이미지 메모리 반환
+	stbi_image_free(data);
+
+	glUseProgram(shader_program);
+	glUniform1i(glGetUniformLocation(shader_program, "texture1"), 0);
+	glUniform1i(glGetUniformLocation(shader_program, "texture2"), 1);
 }
