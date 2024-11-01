@@ -2,8 +2,10 @@
 #define OPENGLCODE_H
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
+#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
-#include "stb_img_implementation.h"
+
 
 #include <iostream>
 #define X 800
@@ -17,27 +19,27 @@ private:
 	char info_log[512];
 
 	const char* vertex_shader_source = "#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n" //À§Ä¡ º¯¼ö´Â attribute position 0¸¦ °¡Áü
-		"layout (location = 1) in vec3 aColor;\n" //ÄÃ·¯ º¯¼ö´Â attribute position 1¸¦ °¡Áü
-		"layout (location = 2) in vec2 aTexCoord;\n" //ÅØ½ºÃÄ º¯¼ö´Â attribute position 1¸¦ °¡Áü
-		"out vec3 ourColor;\n" //ÄÃ·¯¸¦ fragment shader·Î Ãâ·Â
-		"out vec2 texCoord;\n" //ÅØ½ºÃÄ¸¦ fragment shader·Î Ãâ·Â
+		"layout (location = 0) in vec3 aPos;\n" //ï¿½ï¿½Ä¡ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ attribute position 0ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		"layout (location = 1) in vec3 aColor;\n" //ï¿½Ã·ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ attribute position 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		"layout (location = 2) in vec2 aTexCoord;\n" //ï¿½Ø½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ attribute position 1ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		"out vec3 ourColor;\n" //ï¿½Ã·ï¿½ï¿½ï¿½ fragment shaderï¿½ï¿½ ï¿½ï¿½ï¿½
+		"out vec2 texCoord;\n" //ï¿½Ø½ï¿½ï¿½Ä¸ï¿½ fragment shaderï¿½ï¿½ ï¿½ï¿½ï¿½
 		"void main()\n"
 		"{\n"
 		"   gl_Position = vec4(aPos, 1.0);\n"
-		"   ourColor = aColor;\n" //vertex data·ÎºÎÅÍ °¡Á®¿Í ÄÃ·¯ ÀÔ·ÂÀ» ourColor¿¡ ¼³Á¤
-		"   texCoord = aTexCoord;\n" //vertex data·ÎºÎÅÍ °¡Á®¿Í ÅØ½ºÃÄ ÀÔ·ÂÀ» texCoord¿¡ ¼³Á¤
+		"   ourColor = aColor;\n" //vertex dataï¿½Îºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ ï¿½Ô·ï¿½ï¿½ï¿½ ourColorï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
+		"   texCoord = aTexCoord;\n" //vertex dataï¿½Îºï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½Ø½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½ï¿½ï¿½ texCoordï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 		"}\0";
 
 	const char* fragment_shader_source = "#version 330 core\n"
 		"out vec4 FragColor;\n"
-		"in vec3 ourColor;\n" //Vertex Shader·Î ÀÔ·Â ¹ÞÀº ÀÔ·Â º¯¼ö (ÀÌ¸§°ú Å¸ÀÔÀÌ °°¾Æ¾ß ÇÔ)
-		"in vec2 texCoord;\n" //Vertex Shader·Î ÀÔ·Â ¹ÞÀº ÀÔ·Â º¯¼ö (ÀÌ¸§°ú Å¸ÀÔÀÌ °°¾Æ¾ß ÇÔ)
+		"in vec3 ourColor;\n" //Vertex Shaderï¿½ï¿½ ï¿½Ô·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ì¸ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ¾ï¿½ ï¿½ï¿½)
+		"in vec2 texCoord;\n" //Vertex Shaderï¿½ï¿½ ï¿½Ô·ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½Ô·ï¿½ ï¿½ï¿½ï¿½ï¿½ (ï¿½Ì¸ï¿½ï¿½ï¿½ Å¸ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Æ¾ï¿½ ï¿½ï¿½)
 		"uniform sampler2D Texture1;\n"
 		"uniform sampler2D Texture2;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = mix(texture(Texture1, texCoord), texture(Texture2, texCoord), 0.2);\n" //ÅØ½ºÃÄ ÄÃ·¯ »ùÇÃ¸µÀ» À§ÇØ texture »ç¿ë(ÅØ½ºÃÄ sampler, ÅØ½ºÃÄ ÄÃ·¯ °ª »ùÇÃ¸µ)
+		"FragColor = mix(texture(Texture1, texCoord), texture(Texture2, texCoord), 0.2);\n" //ï¿½Ø½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ ï¿½ï¿½ï¿½Ã¸ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ texture ï¿½ï¿½ï¿½(ï¿½Ø½ï¿½ï¿½ï¿½ sampler, ï¿½Ø½ï¿½ï¿½ï¿½ ï¿½Ã·ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½Ã¸ï¿½)
 		"}\0";
 	
 	
@@ -46,7 +48,7 @@ private:
 	unsigned char* data;
 	void set_texture();
 
-	//openglcode.cpp ÀÌ¿Ü¿¡´Â µû·Î ½ÇÇà ½ÃÄÑ¾ßÇÒ ÀÌÀ¯°¡ ¾øÀ½
+	//openglcode.cpp ï¿½Ì¿Ü¿ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½Ñ¾ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
 	void mk_shader();
 	void draw_square();
 	void process_input(GLFWwindow* window) {

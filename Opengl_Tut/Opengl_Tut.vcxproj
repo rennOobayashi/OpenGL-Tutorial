@@ -134,17 +134,15 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
-    <ClCompile Include="..\..\..\..\Downloads\stb_image.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="openglcode.cpp" />
     <ClCompile Include="shader.cpp" />
-    <ClCompile Include="stb_img_implementation.cpp" />
+    <ClCompile Include="stb_image.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="openglcode.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
-    <ClInclude Include="stb_img_implementation.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

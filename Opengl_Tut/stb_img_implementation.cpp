@@ -1,1 +1,0 @@
-#include "stb_img_implementation.h"

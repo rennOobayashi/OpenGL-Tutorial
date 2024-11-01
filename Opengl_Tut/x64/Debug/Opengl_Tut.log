@@ -1,6 +1,78 @@
-﻿  openglcode.cpp
-C:\Users\inhee\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(1,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-C:\glfw-3.4\include\GLFW\glfw3.h(3235,1): warning C4819: 현재 코드 페이지(949)에서 표시할 수 없는 문자가 파일에 들어 있습니다. 데이터가 손실되지 않게 하려면 해당 파일을 유니코드 형식으로 저장하십시오.
-  (소스 파일 'openglcode.cpp'을(를) 컴파일하는 중)
-  
-  Opengl_Tut.vcxproj -> C:\Users\inhee\source\repos\Opengl_Tut\x64\Debug\Opengl_Tut.exe
+﻿  main.cpp
+  openglcode.cpp
+  코드를 생성하고 있습니다...
+openglcode.obj : error LNK2005: stbi_convert_iphone_png_to_rgb이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_convert_iphone_png_to_rgb_thread이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_failure_reason이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_hdr_to_ldr_gamma이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_hdr_to_ldr_scale이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_image_free이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_info이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_info_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_info_from_file이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_info_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_16_bit이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_16_bit_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_16_bit_from_file이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_16_bit_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_hdr이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_hdr_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_hdr_from_file이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_is_hdr_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_ldr_to_hdr_gamma이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_ldr_to_hdr_scale이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_16이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_16_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_16_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_from_file이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_from_file_16이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_load_gif_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_loadf이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_loadf_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_loadf_from_file이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_loadf_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_set_flip_vertically_on_load이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_set_flip_vertically_on_load_thread이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_set_unpremultiply_on_load이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_set_unpremultiply_on_load_thread이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_buffer이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_malloc이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_malloc_guesssize이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_malloc_guesssize_headerflag이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_noheader_buffer이(가) main.obj에 이미 정의되어 있습니다.
+openglcode.obj : error LNK2005: stbi_zlib_decode_noheader_malloc이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_convert_iphone_png_to_rgb이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_failure_reason이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_hdr_to_ldr_gamma이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_hdr_to_ldr_scale이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_image_free이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_info이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_info_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_info_from_file이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_info_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_is_hdr이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_is_hdr_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_is_hdr_from_file이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_is_hdr_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_ldr_to_hdr_gamma이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_ldr_to_hdr_scale이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_load이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_load_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_load_from_file이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_load_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_loadf이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_loadf_from_callbacks이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_loadf_from_file이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_loadf_from_memory이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_set_unpremultiply_on_load이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_buffer이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_malloc이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_malloc_guesssize이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_malloc_guesssize_headerflag이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_noheader_buffer이(가) main.obj에 이미 정의되어 있습니다.
+stb_image.obj : error LNK2005: stbi_zlib_decode_noheader_malloc이(가) main.obj에 이미 정의되어 있습니다.
+LINK : warning LNK4098: 'MSVCRT' defaultlib가 다른 라이브러리와 충돌합니다. /NODEFAULTLIB:library를 사용하십시오.
+C:\Users\devfo\source\repos\Opengl_Tut\x64\Debug\Opengl_Tut.exe : fatal error LNK1169: 여러 번 정의된 기호가 있습니다.
