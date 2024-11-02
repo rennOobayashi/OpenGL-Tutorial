@@ -131,11 +131,11 @@ void openglcode::mk_shader() {
 void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
-		//position          //color           //texture pos
-		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, //0
-		-0.4f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, //1
-		 0.4f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, //2
-		 0.4f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f  //3
+		//position          //color(R,G,B)    //texture pos
+		-1.0f,  1.0f, 0.0f, 0.6f, 0.0f, 0.6f,  1.02f, -0.02f, //0
+		-1.0f, -1.0f, 0.0f, 1.0f, 1.0f, 1.0f,  1.02f,  1.02f, //1
+		 1.0f, -1.0f, 0.0f, 0.6f, 0.0f, 0.6f, -0.02f,  1.02f, //2
+		 1.0f,  1.0f, 0.0f, 1.0f, 1.0f, 1.0f, -0.02f, -0.02f  //3
 	};
 	//삼각형 점 위치
 	unsigned int indices[] = {
@@ -178,18 +178,23 @@ void openglcode::draw_square() {
 }
 
 void openglcode::set_texture() {
+	const float border[] = {0.93f, 0.85f, 0.65f, 1.0f};
+
 	//텍스쳐 갯수, 텍스쳐 배열 저장
 	glGenTextures(1, &texture1);
 	//바인딩
 	glBindTexture(GL_TEXTURE_2D, texture1);
 
 	//텍스쳐 타겟 지정(2D나 3D등  지정, 설정할 옵션(WRAP)과 적용할 축, 텍스쳐 모드 (위치가 1.0보다 클시 어떻게 반복시킬지, GL_CLAMP_TO_BORDER일 시 glTexParmeterfv를 사용하여 태두리색 또한 설정))
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
 	//텍스쳐 필터링 방법 지정
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //or GL_LINEAR
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //or GL_LINEAR
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
+
 	data = stbi_load("watashi.png", &width, &height, &color_ch, 0);
+	stbi_set_flip_vertically_on_load(1);
 
 	if (data) 
 	{
@@ -212,8 +217,8 @@ void openglcode::set_texture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	//stbi_set_flip_vertically_on_load(1);
-	data = stbi_load("brick.png", &width, &height, &color_ch, 0);
+	stbi_set_flip_vertically_on_load(1);
+	data = stbi_load("sakura.png", &width, &height, &color_ch, 0);
 	//std::cout << width << ", " << height << std::endl;
 	if (data) 
 	{
