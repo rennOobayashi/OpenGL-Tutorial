@@ -1,9 +1,7 @@
-#ifndef OPENGLCODE_H
-#define OPENGLCODE_H
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#define STB_IMAGE_IMPLEMENTATION
+//#define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 
@@ -28,18 +26,18 @@ private:
 		"{\n"
 		"   gl_Position = vec4(aPos, 1.0);\n"
 		"   ourColor = aColor;\n" //vertex data�κ��� ������ �÷� �Է��� ourColor�� ����
-		"   texCoord = aTexCoord;\n" //vertex data�κ��� ������ �ؽ��� �Է��� texCoord�� ����
+		"   texCoord = vec2(aTexCoord.x, aTexCoord.y);\n" //vertex data�κ��� ������ �ؽ��� �Է��� texCoord�� ����
 		"}\0";
 
 	const char* fragment_shader_source = "#version 330 core\n"
 		"out vec4 FragColor;\n"
 		"in vec3 ourColor;\n" //Vertex Shader�� �Է� ���� �Է� ���� (�̸��� Ÿ���� ���ƾ� ��)
 		"in vec2 texCoord;\n" //Vertex Shader�� �Է� ���� �Է� ���� (�̸��� Ÿ���� ���ƾ� ��)
-		"uniform sampler2D Texture1;\n"
-		"uniform sampler2D Texture2;\n"
+		"uniform sampler2D texture1;\n"
+		"uniform sampler2D texture2;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = mix(texture(Texture1, texCoord), texture(Texture2, texCoord), 0.2);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
+		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.5) * vec4(ourColor, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
 		"}\0";
 	
 	
@@ -60,5 +58,3 @@ public:
 	void init();
 	void set_n_run();
 };
-
-#endif

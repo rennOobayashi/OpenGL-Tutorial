@@ -132,7 +132,7 @@ void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
 		//position          //color           //texture pos
-		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, //0
+		-0.4f,  0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f, //0
 		-0.4f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, //1
 		 0.4f, -0.5f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, //2
 		 0.4f,  0.5f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f  //3
@@ -187,16 +187,18 @@ void openglcode::set_texture() {
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 	//텍스쳐 필터링 방법 지정
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); //or GL_LINEAR
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST); //or GL_LINEAR
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //or GL_LINEAR
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //or GL_LINEAR
 	data = stbi_load("watashi.png", &width, &height, &color_ch, 0);
-	std::cout << width << ", " << height << std::endl;
-	if (data) {
+
+	if (data) 
+	{
 		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	else {
+	else
+	{
 		std::cout << "Failed to load texture\n";
 	}
 	//mipmap 생성 후 이미지 메모리 반환
@@ -208,17 +210,19 @@ void openglcode::set_texture() {
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	data = stbi_load("watashi.png", &width, &height, &color_ch, 0);
-	std::cout << width << ", " << height << std::endl;
-	if (data) {
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	//stbi_set_flip_vertically_on_load(1);
+	data = stbi_load("brick.png", &width, &height, &color_ch, 0);
+	//std::cout << width << ", " << height << std::endl;
+	if (data) 
+	{
 		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
-	else {
+	else 
+	{
 		std::cout << "Failed to load texture\n";
 	}
 	//mipmap 생성 후 이미지 메모리 반환
