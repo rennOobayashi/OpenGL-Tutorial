@@ -46,16 +46,19 @@ void openglcode::set_n_run() {
 	mk_shader();
 	draw_square();
 	set_texture();
-	test_transform();
 
 	while (!glfwWindowShouldClose(window)) {
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
+
+		test_transform();
 
 		glUseProgram(shader_program);
 		glBindVertexArray(vao);
@@ -240,14 +243,10 @@ void openglcode::test_transform() {
 	unsigned int transform_loc = glGetUniformLocation(shader_program, "transform");
 	glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f); //x, y, z, t
 	glm::mat4 trans = glm::mat4(1.0f); //4x4단위 행렬
-
+	
 	//translate로 변환 행렬 생성 후 trans에 반환
-	trans = glm::translate(trans, glm::vec3(0.2f, 0.2f, 0.0f));
-	//백터와 변환 행렬 곱
-	vec = trans * vec;
-	std::cout << "x: " << vec.x << std::endl << "y: " << vec.y << std::endl << "x: " << vec.z << std::endl << "t: " << vec.t << std::endl;
-
-	trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	trans = glm::translate(trans, glm::vec3(0.75f, -0.75f, 0.0f));
+	trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
 	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))

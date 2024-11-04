@@ -19,6 +19,10 @@ private:
 	unsigned int vbo, vao, veo;
 	unsigned int shader_program;
 	char info_log[512];
+	int width, height, color_ch;
+	unsigned int texture1, texture2;
+	unsigned char* data;
+
 
 	const char* vertex_shader_source = "#version 330 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
@@ -45,10 +49,6 @@ private:
 		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(ourColor, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
 		"}\0";
 	
-	
-	int width, height, color_ch;
-	unsigned int texture1, texture2;
-	unsigned char* data;
 	void set_texture();
 
 	void mk_shader();
