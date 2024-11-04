@@ -5,6 +5,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include <iostream>
 #define X 1280
 #define Y 720
@@ -22,9 +26,10 @@ private:
 		"layout (location = 2) in vec2 aTexCoord;\n"
 		"out vec3 ourColor;\n"
 		"out vec2 texCoord;\n"
+		"uniform mat4 transform;\n"	
 		"void main()\n"
 		"{\n"
-		"   gl_Position = vec4(aPos, 1.0);\n"
+		"   gl_Position = transform * vec4(aPos, 1.0);\n"
 		"   ourColor = aColor;\n"
 		"   texCoord = vec2(aTexCoord.x, aTexCoord.y);\n"
 		"}\0";
@@ -37,7 +42,7 @@ private:
 		"uniform sampler2D texture2;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.05) * vec4(ourColor, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
+		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(ourColor, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
 		"}\0";
 	
 	
@@ -53,6 +58,7 @@ private:
 			glfwWindowShouldClose(window);
 		}
 	}
+	void test_transform();
 public:
 	void init();
 	void set_n_run();
