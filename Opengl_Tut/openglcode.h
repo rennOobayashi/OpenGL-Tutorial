@@ -62,7 +62,7 @@ private:
 		}
 	}
 	void transform();
-	void position();
+	void coordinate();
 public:
 	void init();
 	void set_n_run();
