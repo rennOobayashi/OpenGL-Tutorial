@@ -31,9 +31,12 @@ private:
 		"out vec3 ourColor;\n"
 		"out vec2 texCoord;\n"
 		"uniform mat4 transform;\n"	
+		"uniform mat4 model;\n"	
+		"uniform mat4 view;\n"	
+		"uniform mat4 projection;\n"	
 		"void main()\n"
 		"{\n"
-		"   gl_Position = transform * vec4(aPos, 1.0);\n"
+		"   gl_Position = projection * view * model * vec4(aPos, 1.0);\n" //곱셈을 오른쪽에서 왼쪽으로
 		"   ourColor = aColor;\n"
 		"   texCoord = vec2(aTexCoord.x, aTexCoord.y);\n"
 		"}\0";
@@ -58,7 +61,8 @@ private:
 			glfwWindowShouldClose(window);
 		}
 	}
-	void test_transform();
+	void transform();
+	void position();
 public:
 	void init();
 	void set_n_run();

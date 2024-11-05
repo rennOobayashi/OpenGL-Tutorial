@@ -58,7 +58,7 @@ void openglcode::set_n_run() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
-		test_transform();
+		position();
 
 		glUseProgram(shader_program);
 		glBindVertexArray(vao);
@@ -239,11 +239,11 @@ void openglcode::set_texture() {
 	glUniform1i(glGetUniformLocation(shader_program, "texture2"), 1);
 }
 
-void openglcode::test_transform() {
+void openglcode::transform() {
 	unsigned int transform_loc = glGetUniformLocation(shader_program, "transform");
 	glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f); //x, y, z, t
 	glm::mat4 trans = glm::mat4(1.0f); //4x4단위 행렬
-	
+
 	//translate로 변환 행렬 생성 후 trans에 반환
 	trans = glm::translate(trans, glm::vec3(0.75f, -0.75f, 0.0f));
 	trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -251,4 +251,23 @@ void openglcode::test_transform() {
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
 	glUniformMatrix4fv(transform_loc, 1, GL_FALSE, glm::value_ptr(trans));
+}
+
+void openglcode::position() {
+	unsigned int model_loc = glGetUniformLocation(shader_program, "model");
+	unsigned int view_loc = glGetUniformLocation(shader_program, "view");
+	glm::mat4 model = glm::mat4(1.0f);
+	glm::mat4 view = glm::mat4(1.0f);
+	glm::mat4  projection = glm::mat4(1.0f);
+
+	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+	//움직이고 싶은 방향의 반대로
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f));
+	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
+
+	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
+	glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
+	glUniformMatrix4fv(glGetUniformLocation(shader_program, "projection"), 1, GL_FALSE, &projection[0][0]);
+
 }
