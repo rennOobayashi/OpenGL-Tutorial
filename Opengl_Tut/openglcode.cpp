@@ -5,6 +5,15 @@ void openglcode::init() {
 }
 
 void openglcode::set_n_run() {
+	glm::vec3 cube_positions[] = {
+		glm::vec3(0.0f, 0.0f, -2.0f),
+		glm::vec3(2.0f, 5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.8f, 1.0f, -3.0f),
+		glm::vec3(3.2f, 1.5f, -4.1f),
+	};
 	//opengl 3.3버전 사용
 
 	//메이져 버전
@@ -58,11 +67,24 @@ void openglcode::set_n_run() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 
+		glUseProgram(shader_program);
+
 		coordinate();
 
-		glUseProgram(shader_program);
 		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		for (unsigned int i = 0; i < 7; i++) {
+			glm::mat4 model = glm::mat4(1.0f);
+			float angle = 20.0f * i;
+
+			model = glm::translate(model, cube_positions[i]);
+			model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
+			
+			glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, &model[0][0]);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
 		glBindVertexArray(0);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
@@ -290,24 +312,19 @@ void openglcode::transform() {
 }
 
 void openglcode::coordinate() {
-	unsigned int model_loc = glGetUniformLocation(shader_program, "model");
 	unsigned int view_loc = glGetUniformLocation(shader_program, "view");
-	glm::mat4 model = glm::mat4(1.0f);
+	unsigned int projection_loc = glGetUniformLocation(shader_program, "projection");
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4  projection = glm::mat4(1.0f);
 
-	model = glm::rotate(model, (float)glfwGetTime() * glm::radians(55.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 	//움직이고 싶은 방향의 반대로
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f));
 	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
-	glUniformMatrix4fv(model_loc, 1, GL_FALSE, glm::value_ptr(model));
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(glGetUniformLocation(shader_program, "projection"), 1, GL_FALSE, &projection[0][0]);
+	glUniformMatrix4fv(projection_loc, 1, GL_FALSE, &projection[0][0]);
 
 	//depth testing 수행 활성화
 	glEnable(GL_DEPTH_TEST);
-
-
 }

@@ -23,7 +23,6 @@ private:
 	unsigned int texture1, texture2;
 	unsigned char* data;
 
-
 	const char* vertex_shader_source = "#version 330 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
 		"layout (location = 1) in vec3 aColor;\n"
