@@ -61,7 +61,7 @@ private:
 		}
 	}
 	void transform();
-	void coordinate();
+	void camera();
 public:
 	void init();
 	void set_n_run();

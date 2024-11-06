@@ -69,7 +69,7 @@ void openglcode::set_n_run() {
 
 		glUseProgram(shader_program);
 
-		coordinate();
+		camera();
 
 		glBindVertexArray(vao);
 
@@ -311,15 +311,30 @@ void openglcode::transform() {
 	glUniformMatrix4fv(transform_loc, 1, GL_FALSE, glm::value_ptr(trans));
 }
 
-void openglcode::coordinate() {
+void openglcode::camera() {
 	unsigned int view_loc = glGetUniformLocation(shader_program, "view");
 	unsigned int projection_loc = glGetUniformLocation(shader_program, "projection");
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4  projection = glm::mat4(1.0f);
 
-	//움직이고 싶은 방향의 반대로
-	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -2.0f));
+	glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
+	glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
+	glm::vec3 camera_direction = glm::normalize(camera_pos - camera_target);
+	//카메라의 오른쪽 백터를 얻기 위해 위쪽 백터를 만들고 camera direction과 외적
+	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+	glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
+	glm::vec3 camera_up = glm::cross(camera_direction, camera_right);
+
+	float radius = 10.0f;
+	float cam_x = sin(glfwGetTime()) * radius;
+	float cam_z = cos(glfwGetTime()) * radius;
+
 	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
+
+	view = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), //위치
+		glm::vec3(0.0f, 0.0f, 0.0f), //타겟
+		glm::vec3(0.0f, 1.0f, 0.0f)); //위쪽 백터
+
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
