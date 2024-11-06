@@ -1,6 +1,13 @@
 #include "openglcode.h"
 
 void openglcode::init() {
+	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
+	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
+	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
+
+	delta_time = 0.0f;
+	last_frame = 0.0f;
+
 	glfwInit();
 }
 
@@ -25,7 +32,7 @@ void openglcode::set_n_run() {
 
 	//모든 윈도우 데이터 보유
 
-	GLFWwindow* window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
+	window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
 	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
@@ -57,6 +64,12 @@ void openglcode::set_n_run() {
 	set_texture();
 
 	while (!glfwWindowShouldClose(window)) {
+		float current_frame = glfwGetTime();
+
+		delta_time = current_frame - last_frame;
+		last_frame = current_frame;
+
+		process_input(window);
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -316,25 +329,14 @@ void openglcode::camera() {
 	unsigned int projection_loc = glGetUniformLocation(shader_program, "projection");
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4  projection = glm::mat4(1.0f);
-
-	glm::vec3 camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
-	glm::vec3 camera_target = glm::vec3(0.0f, 0.0f, 0.0f);
-	glm::vec3 camera_direction = glm::normalize(camera_pos - camera_target);
-	//카메라의 오른쪽 백터를 얻기 위해 위쪽 백터를 만들고 camera direction과 외적
-	glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
-	glm::vec3 camera_right = glm::normalize(glm::cross(up, camera_direction));
-	glm::vec3 camera_up = glm::cross(camera_direction, camera_right);
-
 	float radius = 10.0f;
 	float cam_x = sin(glfwGetTime()) * radius;
 	float cam_z = cos(glfwGetTime()) * radius;
 
 	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
 
-	view = glm::lookAt(glm::vec3(cam_x, 0.0f, cam_z), //위치
-		glm::vec3(0.0f, 0.0f, 0.0f), //타겟
-		glm::vec3(0.0f, 1.0f, 0.0f)); //위쪽 백터
 
+	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
 	glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
@@ -342,4 +344,27 @@ void openglcode::camera() {
 
 	//depth testing 수행 활성화
 	glEnable(GL_DEPTH_TEST);
+}
+
+void openglcode::process_input(GLFWwindow* window) {
+	float camera_speed = 2.5f * delta_time;
+
+	camera_speed = 0.05f;
+
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		camera_pos += camera_speed * camera_front;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		camera_pos -= camera_speed * camera_front;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+	}
+	else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+	}
+
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+		glfwWindowShouldClose(window);
+	}
 }

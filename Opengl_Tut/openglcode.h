@@ -16,12 +16,19 @@
 class openglcode
 {
 private:
+	GLFWwindow* window;
+	glm::vec3 camera_pos;
+	glm::vec3 camera_front;
+	glm::vec3 camera_up;
 	unsigned int vbo, vao, veo;
 	unsigned int shader_program;
 	char info_log[512];
 	int width, height, color_ch;
 	unsigned int texture1, texture2;
 	unsigned char* data;
+	float camera_speed;
+	float delta_time;
+	float last_frame;
 
 	const char* vertex_shader_source = "#version 330 core\n"
 		"layout (location = 0) in vec3 aPos;\n"
@@ -55,11 +62,7 @@ private:
 
 	void mk_shader();
 	void draw_square();
-	void process_input(GLFWwindow* window) {
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-			glfwWindowShouldClose(window);
-		}
-	}
+	void process_input(GLFWwindow* window);
 	void transform();
 	void camera();
 public:
