@@ -1,5 +1,15 @@
 #include "openglcode.h"
 
+void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
+
+glm::vec3 camera_front;
+float yaw;
+float pitch;
+float last_x;
+float last_y;
+bool first_mouse = true;
+float sensivity;
+
 void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
@@ -7,6 +17,14 @@ void openglcode::init() {
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
+
+	yaw = -90.0f;
+	pitch = 0.0f;
+
+	last_x = X / 2;
+	last_y = Y / 2;
+
+	sensivity = 0.05f;
 
 	glfwInit();
 }
@@ -333,8 +351,12 @@ void openglcode::camera() {
 	float cam_x = sin(glfwGetTime()) * radius;
 	float cam_z = cos(glfwGetTime()) * radius;
 
-	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
+	//주변을 둘러볼수 있게 하는 3차원 방향 벡터 변환
+	direction.y = sin(glm::radians(pitch));
+	direction.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
+	direction.z = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
 
+	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
 
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
@@ -351,6 +373,10 @@ void openglcode::process_input(GLFWwindow* window) {
 
 	camera_speed = 0.05f;
 
+	//커서 안보이게 하고 창화면에 가둠
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
+
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		camera_pos += camera_speed * camera_front;
 	}
@@ -365,6 +391,40 @@ void openglcode::process_input(GLFWwindow* window) {
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
-		glfwWindowShouldClose(window);
+		std::cout << "EXIT\n";
+		glfwSetWindowShouldClose(window, true);
 	}
+}
+
+void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
+	if (first_mouse) {
+		last_x = x_pos;
+		last_y = y_pos;
+
+		first_mouse = false;
+	}
+
+	glm::vec3 front;
+	float x_offset = x_pos - last_x;
+	float y_offset = last_y - y_pos;
+
+	last_x = x_pos;
+	last_y = y_pos;
+
+	x_offset *= sensivity;
+	y_offset *= sensivity;
+
+	yaw += x_offset;
+	pitch += y_offset;
+
+	//y축 카메라 시점 제한
+	if (pitch > 89.0f)
+		pitch = 89.0f;
+	if (pitch < -89.0f)
+		pitch = -89.0f;
+
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.y = sin(glm::radians(pitch));
+	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+	camera_front = glm::normalize(front);
 }

@@ -18,8 +18,8 @@ class openglcode
 private:
 	GLFWwindow* window;
 	glm::vec3 camera_pos;
-	glm::vec3 camera_front;
 	glm::vec3 camera_up;
+	glm::vec3 direction;
 	unsigned int vbo, vao, veo;
 	unsigned int shader_program;
 	char info_log[512];
