@@ -1,14 +1,16 @@
 #include "openglcode.h"
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
+void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
 
 glm::vec3 camera_front;
-float yaw;
-float pitch;
-float last_x;
-float last_y;
+float yaw = -90.0f;
+float pitch = 0.0f;
+float last_x = X / 2;
+float last_y = Y / 2;
 bool first_mouse = true;
-float sensivity;
+float sensivity = 0.05f;
+float fov = 45.0f;;
 
 void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -17,14 +19,6 @@ void openglcode::init() {
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
-
-	yaw = -90.0f;
-	pitch = 0.0f;
-
-	last_x = X / 2;
-	last_y = Y / 2;
-
-	sensivity = 0.05f;
 
 	glfwInit();
 }
@@ -356,7 +350,9 @@ void openglcode::camera() {
 	direction.x = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
 	direction.z = cos(glm::radians(pitch)) * cos(glm::radians(yaw));
 
-	projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+
+	glfwSetScrollCallback(window, scroll_callback);
 
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
@@ -418,13 +414,25 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
 	pitch += y_offset;
 
 	//y축 카메라 시점 제한
-	if (pitch > 89.0f)
+	if (pitch > 89.0f) {
 		pitch = 89.0f;
-	if (pitch < -89.0f)
+	} else if (pitch < -89.0f) {
 		pitch = -89.0f;
+	}
 
 	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
 	front.y = sin(glm::radians(pitch));
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	camera_front = glm::normalize(front);
+}
+
+void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
+	if (fov >= 1.0f && fov <= 45.0f) {
+		fov -= y_offset;
+	} else if (fov <= 1.0f) {
+		fov = 1.0f;
+	}
+	else if (fov >= 45.0f) {
+		fov = 45.0f;
+	}
 }
