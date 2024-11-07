@@ -373,16 +373,17 @@ void openglcode::process_input(GLFWwindow* window) {
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
+	//대각선 이동이 가능하도록 하기 위해 전부 if로
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
 		camera_pos += camera_speed * camera_front;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
 		camera_pos -= camera_speed * camera_front;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
 		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
 	}
-	else if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
 	}
 
