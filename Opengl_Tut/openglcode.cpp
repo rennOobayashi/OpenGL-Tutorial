@@ -26,12 +26,19 @@ void openglcode::init() {
 void openglcode::set_n_run() {
 	glm::vec3 cube_positions[] = {
 		glm::vec3(0.0f, 0.0f, -2.0f),
-		glm::vec3(2.0f, 5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.8f, 1.0f, -3.0f),
+		glm::vec3(8.0f, 5.0f, -15.0f),
+		glm::vec3(-6.5f, -2.2f, -2.5f),
+		glm::vec3(2.8f, -2.0f, -12.3f),
+		glm::vec3(8.4f, -0.4f, -3.5f),
+		glm::vec3(6.8f, 1.0f, -3.0f),
 		glm::vec3(3.2f, 1.5f, -4.1f),
+		glm::vec3(10.0f, 2.0f, 5.0f),
+		glm::vec3(8.0f, 10.0f, 0.0f),
+		glm::vec3(-7.5f, 4.5f, 1.0f),
+		glm::vec3(-3.8f, -2.0f, -2.3f),
+		glm::vec3(5.0f, 2.2f, 3.0f),
+		glm::vec3(5.5f, 12.0f, 5.4f),
+		glm::vec3(7.2f, -5.5f, 7.1f)
 	};
 	//opengl 3.3버전 사용
 
@@ -98,7 +105,7 @@ void openglcode::set_n_run() {
 
 		glBindVertexArray(vao);
 
-		for (unsigned int i = 0; i < 7; i++) {
+		for (unsigned int i = 0; i < 14; i++) {
 			glm::mat4 model = glm::mat4(1.0f);
 			float angle = 20.0f * i;
 
