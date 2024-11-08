@@ -87,6 +87,7 @@ void openglcode::set_n_run() {
 
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
+		std::cout << delta_time << std::endl;
 
 		process_input(window);
 
@@ -373,8 +374,6 @@ void openglcode::camera() {
 
 void openglcode::process_input(GLFWwindow* window) {
 	float camera_speed = 2.5f * delta_time;
-
-	camera_speed = 0.05f;
 
 	//커서 안보이게 하고 창화면에 가둠
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
