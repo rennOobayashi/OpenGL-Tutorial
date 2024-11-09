@@ -136,7 +136,6 @@
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="openglcode.cpp" />
-    <ClCompile Include="shader.cpp" />
     <ClCompile Include="stb_image.c" />
   </ItemGroup>
   <ItemGroup>

@@ -24,9 +24,6 @@
     <ClCompile Include="openglcode.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="shader.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="stb_image.c">
       <Filter>소스 파일</Filter>
     </ClCompile>

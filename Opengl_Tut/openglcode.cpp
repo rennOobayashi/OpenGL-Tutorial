@@ -1,5 +1,6 @@
 #include "openglcode.h"
 
+void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
 
@@ -55,10 +56,7 @@ void openglcode::set_n_run() {
 		return;
 	}
 
-	glfwSetFramebufferSizeCallback(window, [](GLFWwindow* window, int width, int height) {
-		//0,0에서 시작, width,height에서 끝
-		glViewport(0, 0, width, height);
-		});
+	glfwSetFramebufferSizeCallback(window, frame_buffer_size_callback);
 
 	glfwMakeContextCurrent(window);
 
@@ -68,9 +66,11 @@ void openglcode::set_n_run() {
 		return;
 	}
 
-	mk_shader();
+	Shader light_shader("vertex.vs", "fragment.fs");
+	Shader cube_shader("cube_vertex.vs", "cube_fragment.fs");
+
 	draw_square();
-	set_texture();
+	set_texture(light_shader);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = glfwGetTime();
@@ -89,28 +89,14 @@ void openglcode::set_n_run() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		
+		light_shader.use();
+		light_shader.set_vec3("object_color", 1.0f, 1.0f, 1.0f);
+		light_shader.set_vec3("light_color", 1.0f, 0.5f, 0.31f);
 
-		glUseProgram(shader_program);
-		glUniform3f(glGetUniformLocation(shader_program, "object_color"), 1.0f, 0.5f, 0.31f);
-		glUniform3f(glGetUniformLocation(shader_program, "light_color"), 1.0f, 0.5f, 0.31f);
 
-
-		camera();
+		camera(light_shader);
 
 		glBindVertexArray(vao);
-
-		/*
-		for (unsigned int i = 0; i < 14; i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			float angle = 20.0f * i;
-
-			model = glm::translate(model, light_pos);
-			model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
-			
-			glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, &model[0][0]);
-
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}*/
 
 		glm::mat4 model = glm::mat4(1.0f);
 		float angle = 20.0f;
@@ -118,8 +104,22 @@ void openglcode::set_n_run() {
 		model = glm::translate(model, light_pos);
 		model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
 
-		glUniformMatrix4fv(glGetUniformLocation(shader_program, "model"), 1, GL_FALSE, &model[0][0]);
+		light_shader.set_mat4("model", model);
 
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		cube_shader.use();
+
+		model = glm::mat4(1.0f);
+
+		camera(cube_shader);
+
+		model = glm::translate(model, cube_positions[5]);
+		model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
+
+		cube_shader.set_mat4("model", model);
+
+		glBindVertexArray(cube_vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
@@ -130,63 +130,15 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &veo);
-	glDeleteProgram(shader_program);
+	glDeleteProgram(light_shader.id);
 
 	glfwTerminate();
 
 	return;
 }
 
-void openglcode::mk_shader() {
-	unsigned int vertex_shader;
-	unsigned int fragment_shader;
-	int success;
-
-	//shader 생성, vertex shader를 사용하므로 GL_VERTEX_SHADER를 파라미터(인수)로 입력
-	vertex_shader = glCreateShader(GL_VERTEX_SHADER);
-
-
-
-	//shader 객체, 몇 개의 문자열로 되어있는지, 실제 소스 코드
-	glShaderSource(vertex_shader, 1, &vertex_shader_source, NULL);
-	//컴파일이 완료되었는지 확인
-	glCompileShader(vertex_shader);
-
-	glGetProgramiv(vertex_shader, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(vertex_shader, 512, NULL, info_log);
-		std::cout << "ERROR::VERTEX::SHADER::COMPILATION_FAILED\n" << info_log << std::endl;
-	}
-
-	fragment_shader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragment_shader, 1, &fragment_shader_source, NULL);
-	glCompileShader(fragment_shader);
-
-	glGetProgramiv(fragment_shader, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(fragment_shader, 512, NULL, info_log);
-		std::cout << "ERROR::FRAGMENT::SHADER::COMPILATION_FAILED\n" << info_log << std::endl;
-	}
-
-	//컴파일된 shader들을 연결하기 위한 program 객체, program 객체 ID 리턴
-	shader_program = glCreateProgram();
-
-	//컴파일한 shader 첨부
-	glAttachShader(shader_program, vertex_shader);
-	glAttachShader(shader_program, fragment_shader);
-	//shader 연결
-	glLinkProgram(shader_program);
-
-	//shader 연결 성공 여부 확인
-	glGetProgramiv(shader_program, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shader_program, 512, NULL, info_log);
-		std::cout << "ERROR::SHADER::PROGRAM::COMPILATION_FAILED\n" << info_log << std::endl;
-	}
-
-	//연결 후 제거
-	glDeleteShader(vertex_shader);
-	glDeleteShader(fragment_shader);
+void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
+	glViewport(0, 0, width, height);
 }
 
 void openglcode::draw_square() {
@@ -269,9 +221,19 @@ void openglcode::draw_square() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 
 	glBindVertexArray(0);
+
+	glGenVertexArrays(1, &cube_vao);
+	glBindVertexArray(cube_vao);
+	// VBO를 바인딩 바인딩하기만 하면 됩니다. 컨테이너의 VBO 데이터는 이미 정확한 데이터를 가지고 있습니다.
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	// vertex attribute를 설정합니다(램프를 위한 위치 데이터만).
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glBindVertexArray(0);
 }
 
-void openglcode::set_texture() {
+void openglcode::set_texture(Shader shader) {
 
 	//텍스쳐 갯수, 텍스쳐 배열 저장
 	glGenTextures(1, &texture1);
@@ -323,29 +285,13 @@ void openglcode::set_texture() {
 	}
 	//mipmap 생성 후 이미지 메모리 반환
 	stbi_image_free(data);
-
-	glUseProgram(shader_program);
-	glUniform1i(glGetUniformLocation(shader_program, "texture1"), 0);
-	glUniform1i(glGetUniformLocation(shader_program, "texture2"), 1);
+	
+	shader.use();
+	shader.set_int("texture1", 0);
+	shader.set_int("texture2", 1);	
 }
 
-void openglcode::transform() {
-	unsigned int transform_loc = glGetUniformLocation(shader_program, "transform");
-	glm::vec4 vec(1.0f, 0.0f, 0.0f, 1.0f); //x, y, z, t
-	glm::mat4 trans = glm::mat4(1.0f); //4x4단위 행렬
-
-	//translate로 변환 행렬 생성 후 trans에 반환
-	trans = glm::translate(trans, glm::vec3(0.75f, -0.75f, 0.0f));
-	trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
-	trans = glm::scale(trans, glm::vec3(0.5f, 0.5f, 0.5f));
-
-	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
-	glUniformMatrix4fv(transform_loc, 1, GL_FALSE, glm::value_ptr(trans));
-}
-
-void openglcode::camera() {
-	unsigned int view_loc = glGetUniformLocation(shader_program, "view");
-	unsigned int projection_loc = glGetUniformLocation(shader_program, "projection");
+void openglcode::camera(Shader shader) {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4  projection = glm::mat4(1.0f);
 	float radius = 10.0f;
@@ -364,8 +310,8 @@ void openglcode::camera() {
 	view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 
 	//행렬 데이터 shader에 보내기(uniform location, 보낼 행렬 수, 행과 열 바꿀지, 실제 행렬 데이터(OpenGL이 원하는 형태로 변환 후))
-	glUniformMatrix4fv(view_loc, 1, GL_FALSE, &view[0][0]);
-	glUniformMatrix4fv(projection_loc, 1, GL_FALSE, &projection[0][0]);
+	shader.set_mat4("view", view);
+	shader.set_mat4("projection", projection);
 
 	//depth testing 수행 활성화
 	glEnable(GL_DEPTH_TEST);
@@ -441,7 +387,4 @@ void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
 	else if (fov >= 45.0f) {
 		fov = 45.0f;
 	}
-}
-
-void openglcode::lighting() {
 }
