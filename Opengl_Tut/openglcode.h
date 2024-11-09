@@ -20,6 +20,7 @@ private:
 	glm::vec3 camera_pos;
 	glm::vec3 camera_up;
 	glm::vec3 direction;
+	glm::vec3 light_pos;
 	unsigned int vbo, vao, veo;
 	unsigned int shader_program;
 	char info_log[512];
@@ -34,28 +35,26 @@ private:
 		"layout (location = 0) in vec3 aPos;\n"
 		"layout (location = 1) in vec3 aColor;\n"
 		"layout (location = 2) in vec2 aTexCoord;\n"
-		"out vec3 ourColor;\n"
 		"out vec2 texCoord;\n"
-		"uniform mat4 transform;\n"	
 		"uniform mat4 model;\n"	
 		"uniform mat4 view;\n"	
 		"uniform mat4 projection;\n"	
 		"void main()\n"
 		"{\n"
 		"   gl_Position = projection * view * model * vec4(aPos, 1.0);\n" //곱셈을 오른쪽에서 왼쪽으로
-		"   ourColor = aColor;\n"
 		"   texCoord = vec2(aTexCoord.x, aTexCoord.y);\n"
 		"}\0";
 
 	const char* fragment_shader_source = "#version 330 core\n"
 		"out vec4 FragColor;\n"
-		"in vec3 ourColor;\n"
 		"in vec2 texCoord;\n"
 		"uniform sampler2D texture1;\n"
 		"uniform sampler2D texture2;\n"
+		"uniform vec3 object_color;\n"
+		"uniform vec3 light_color;\n"
 		"void main()\n"
 		"{\n"
-		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(ourColor, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
+		"FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(object_color * light_color, 1.0);\n" //�ؽ��� �÷� ���ø��� ���� texture ���(�ؽ��� sampler, �ؽ��� �÷� �� ���ø�)
 		"}\0";
 	
 	void set_texture();
@@ -65,6 +64,7 @@ private:
 	void process_input(GLFWwindow* window);
 	void transform();
 	void camera();
+	void lighting();
 public:
 	void init();
 	void set_n_run();
