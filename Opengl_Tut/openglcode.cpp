@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(1.2f, 1.0f, 2.0f);
+	light_pos = glm::vec3(1.2f, 1.0f, -20.0f);
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
@@ -90,9 +90,10 @@ void openglcode::set_n_run() {
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		
 		light_shader.use();
-		light_shader.set_vec3("object_color", 1.0f, 5.0f, 0.31f);
+		light_shader.set_vec3("object_color", 0.0f, 0.5f, 0.31f);
 		light_shader.set_vec3("light_color", 1.0f, 1.0f, 1.0f);
 		light_shader.set_vec3("light_pos", light_pos);
+		light_shader.set_vec3("view_pos", camera_pos);
 
 
 		camera(light_shader);
@@ -101,8 +102,6 @@ void openglcode::set_n_run() {
 
 		glm::mat4 model = glm::mat4(1.0f);
 		float angle = 20.0f;
-
-		model = glm::translate(model, glm::vec3(-1.0f, 2.0f, -0.5f));
 
 		light_shader.set_mat4("model", model);
 
