@@ -9,5 +9,9 @@ uniform vec3 light_color;
 
 void main()
 {
-    FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(object_color * light_color, 1.0);
+	float ambient_strength = 0.1;
+	vec3 ambient = ambient_strength * light_color;
+	vec3 result = ambient * object_color;
+
+    FragColor = mix(texture(texture1, texCoord), texture(texture2, texCoord), 0.1) * vec4(result, 1.0);
 }

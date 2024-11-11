@@ -30,7 +30,6 @@ private:
 	float camera_speed;
 	float delta_time;
 	float last_frame;
-		
 
 	void draw_square();
 	void set_texture(Shader shader);
