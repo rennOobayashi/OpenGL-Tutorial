@@ -78,6 +78,13 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
+		light_color.x = sin(glfwGetTime() * 2.0f);
+		light_color.y = sin(glfwGetTime() * 0.7f);
+		light_color.z = sin(glfwGetTime() * 1.3f);
+
+		diffuse_color = light_color * glm::vec3(0.5f);
+		ambient_color = diffuse_color * glm::vec3(0.2f);
+
 		process_input(window);
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -93,8 +100,8 @@ void openglcode::set_n_run() {
 		light_shader.set_vec3("light.position", light_pos);
 		light_shader.set_vec3("view_pos", camera_pos);
 
-		light_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
-		light_shader.set_vec3("light.diffuse", 1.0f, 1.0f, 1.0f);
+		light_shader.set_vec3("light.ambient", ambient_color);
+		light_shader.set_vec3("light.diffuse", diffuse_color);
 		light_shader.set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
 
 		light_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
