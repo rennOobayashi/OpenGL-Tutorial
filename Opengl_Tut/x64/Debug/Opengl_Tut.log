@@ -1,12 +1,1 @@
-﻿  openglcode.cpp
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(86,23): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(353,14): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(354,14): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(404,12): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(405,12): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(411,17): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(412,17): warning C4244: '초기화 중': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(414,11): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(415,11): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(438,10): warning C4244: '-=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-  Opengl_Tut.vcxproj -> C:\Users\devfo\source\repos\Opengl_Tut\x64\Debug\Opengl_Tut.exe
+﻿  Opengl_Tut.vcxproj -> C:\Users\devfo\source\repos\Opengl_Tut\x64\Debug\Opengl_Tut.exe
