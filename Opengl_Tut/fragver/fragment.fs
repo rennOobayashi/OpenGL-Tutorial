@@ -24,9 +24,6 @@ uniform Material material;
 uniform Light light;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
-uniform vec3 object_color;
-uniform vec3 light_color;
-uniform vec3 light_pos;
 uniform vec3 view_pos;
 
 void main()
@@ -47,7 +44,7 @@ void main()
     ambient = material.ambient * light.ambient;
 
     norm = normalize(normal);
-    light_dir = normalize(light_pos - frag_pos);
+    light_dir = normalize(light.position - frag_pos);
 
     diff = max(dot(norm, light_dir), 0.0);
     diffuse = (diff * material.diffuse) * light.diffuse;

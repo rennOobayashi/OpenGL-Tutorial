@@ -90,9 +90,7 @@ void openglcode::set_n_run() {
 		glBindTexture(GL_TEXTURE_2D, texture2);
 		
 		light_shader.use();
-		light_shader.set_vec3("object_color", 0.0f, 0.5f, 0.31f);
-		light_shader.set_vec3("light_color", 1.0f, 1.0f, 1.0f);
-		light_shader.set_vec3("light_pos", light_pos);
+		light_shader.set_vec3("light.position", light_pos);
 		light_shader.set_vec3("view_pos", camera_pos);
 
 		light_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
