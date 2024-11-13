@@ -70,10 +70,16 @@ void openglcode::set_n_run() {
 	Shader cube_shader("fragver/cube_vertex.vs", "fragver/cube_fragment.fs");
 
 	draw_square();
-	set_texture(light_shader);
+
+	diff_tex = load_texture("texture/watashi.png");
+	spec_tex = load_texture("texture/watashi_specular.png");
+
+	light_shader.use();
+	light_shader.set_int("material.diffuse", 0);
+	light_shader.set_int("material.specular", 1);
 
 	while (!glfwWindowShouldClose(window)) {
-		float current_frame = glfwGetTime();
+		float current_frame = (float)glfwGetTime();
 
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
@@ -83,11 +89,6 @@ void openglcode::set_n_run() {
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-				
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture1);
-		//glActiveTexture(GL_TEXTURE1);
-		//glBindTexture(GL_TEXTURE_2D, texture2);
 		
 		light_shader.use();
 		light_shader.set_vec3("light.position", light_pos);
@@ -109,6 +110,11 @@ void openglcode::set_n_run() {
 
 		glm::mat4 model = glm::mat4(1.0f);
 		float angle = 20.0f;
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, spec_tex);
 
 		light_shader.set_mat4("model", model);
 
@@ -241,28 +247,37 @@ void openglcode::draw_square() {
 	glBindVertexArray(0);
 }
 
-void openglcode::set_texture(Shader shader) {
+unsigned int openglcode::load_texture(char const* path) {
+	unsigned int texture;
+	int width, height, color_ch;
+	GLenum format;
+	format = GL_RGB;
 
-	//텍스쳐 갯수, 텍스쳐 배열 저장
-	glGenTextures(1, &texture1);
-	//바인딩
-	glBindTexture(GL_TEXTURE_2D, texture1);
+	glGenTextures(1, &texture);
+	data = stbi_load(path, &width, &height, &color_ch, 0);
 
-	//텍스쳐 타겟 지정(2D나 3D등  지정, 설정할 옵션(WRAP)과 적용할 축, 텍스쳐 모드 (위치가 1.0보다 클시 어떻게 반복시킬지, GL_CLAMP_TO_BORDER일 시 glTexParmeterfv를 사용하여 태두리색 또한 설정))
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	//텍스쳐 필터링 방법 지정
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); //or GL_LINEAR
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR); //or GL_LINEAR
-
-	stbi_set_flip_vertically_on_load(1);
-	data = stbi_load("texture/watashi.png", &width, &height, &color_ch, 0);
-
-	if (data) 
+	if (data)
 	{
-		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+		if (color_ch == 1) {
+			format = GL_RED;
+		}
+		else if (color_ch == 3) {
+			format = GL_RGB;
+		}
+		else if (color_ch == 4) {
+			format = GL_RGBA;
+		}
+
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_set_flip_vertically_on_load(1);
 	}
 	else
 	{
@@ -271,46 +286,16 @@ void openglcode::set_texture(Shader shader) {
 	//mipmap 생성 후 이미지 메모리 반환
 
 	stbi_image_free(data);
-	/*
-	
-	glGenTextures(1, &texture2);
-	glBindTexture(GL_TEXTURE_2D, texture2);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	data = stbi_load("texture/sakura.png", &width, &height, &color_ch, 0);
-	//std::cout << width << ", " << height << std::endl;
-	if (data) 
-	{
-		//텍스쳐 생성(텍스쳐 타겟, 텍스쳐 mipmap 레벨 수동 지정 여부 (아닐시 0), OpenGL에 우리가 저장하고 싶은 텍스쳐 포멧 지정, 텍스쳐 너비, 높이, 그냥 0, 원본 이미지 포멧과 데이터 타입, 실제 이미지 데이터)
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else 
-	{
-		std::cout << "Failed to load texture\n";
-	}
-	//mipmap 생성 후 이미지 메모리 반환
-	stbi_image_free(data);
-	
-	shader.use();
-	shader.set_int("texture1", 0);
-	shader.set_int("texture2", 1);	
-	*/
-}
-
-unsigned int openglcode::load_texture(char const* path) {
-	return 0;
+	return texture;
 }
 
 void openglcode::camera(Shader shader) {
 	glm::mat4 view = glm::mat4(1.0f);
 	glm::mat4  projection = glm::mat4(1.0f);
 	float radius = 10.0f;
-	float cam_x = sin(glfwGetTime()) * radius;
-	float cam_z = cos(glfwGetTime()) * radius;
+	float cam_x = sin((float)glfwGetTime()) * radius;
+	float cam_z = cos((float)glfwGetTime()) * radius;
 
 	//주변을 둘러볼수 있게 하는 3차원 방향 벡터 변환
 	direction.y = sin(glm::radians(pitch));

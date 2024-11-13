@@ -7,7 +7,7 @@ in vec3 normal;
 
 struct Material {
     sampler2D diffuse;
-    vec3 specular;
+    sampler2D specular;
     float shininess;
 };
 
@@ -49,7 +49,7 @@ void main()
     reflect_dir = reflect(-light_dir, norm);
 
     spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-    specular = (material.specular * spec) * light.specular;
+    specular = light.specular * spec * vec3(texture(material.specular, tex_coord));
     
     result = ambient + diffuse + specular;
 

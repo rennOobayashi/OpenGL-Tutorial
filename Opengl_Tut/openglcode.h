@@ -25,15 +25,14 @@ private:
 	glm::vec3 light_color;
 	unsigned int vbo, vao, veo, cube_vao;
 	char info_log[512];
-	int width, height, color_ch;
 	unsigned int texture1, texture2;
+	unsigned int diff_tex, spec_tex;
 	unsigned char* data;
 	float camera_speed;
 	float delta_time;
 	float last_frame;
 
 	void draw_square();
-	void set_texture(Shader shader);
 	unsigned int load_texture(char const* path);
 	void process_input(GLFWwindow* window);
 	void camera(Shader shader);
