@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(5.0f, 2.0f, -10.0f);
+	light_pos = glm::vec3(7.0f, 2.0f, -10.0f);
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
@@ -78,30 +78,23 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
-		light_color.x = sin(glfwGetTime() * 2.0f);
-		light_color.y = sin(glfwGetTime() * 0.7f);
-		light_color.z = sin(glfwGetTime() * 1.3f);
-
-		diffuse_color = light_color * glm::vec3(0.5f);
-		ambient_color = diffuse_color * glm::vec3(0.2f);
 
 		process_input(window);
 
 		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		
+				
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture1);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, texture2);
+		//glActiveTexture(GL_TEXTURE1);
+		//glBindTexture(GL_TEXTURE_2D, texture2);
 		
 		light_shader.use();
 		light_shader.set_vec3("light.position", light_pos);
 		light_shader.set_vec3("view_pos", camera_pos);
 
-		light_shader.set_vec3("light.ambient", ambient_color);
-		light_shader.set_vec3("light.diffuse", diffuse_color);
+		light_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
+		light_shader.set_vec3("light.diffuse", 1.0f, 1.0f, 1.0f);
 		light_shader.set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
 
 		light_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
@@ -278,7 +271,8 @@ void openglcode::set_texture(Shader shader) {
 	//mipmap 생성 후 이미지 메모리 반환
 
 	stbi_image_free(data);
-
+	/*
+	
 	glGenTextures(1, &texture2);
 	glBindTexture(GL_TEXTURE_2D, texture2);
 
@@ -304,6 +298,11 @@ void openglcode::set_texture(Shader shader) {
 	shader.use();
 	shader.set_int("texture1", 0);
 	shader.set_int("texture2", 1);	
+	*/
+}
+
+unsigned int openglcode::load_texture(char const* path) {
+	return 0;
 }
 
 void openglcode::camera(Shader shader) {

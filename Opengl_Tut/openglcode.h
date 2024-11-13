@@ -23,8 +23,6 @@ private:
 	glm::vec3 direction;
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
-	glm::vec3 diffuse_color;
-	glm::vec3 ambient_color;
 	unsigned int vbo, vao, veo, cube_vao;
 	char info_log[512];
 	int width, height, color_ch;
@@ -36,6 +34,7 @@ private:
 
 	void draw_square();
 	void set_texture(Shader shader);
+	unsigned int load_texture(char const* path);
 	void process_input(GLFWwindow* window);
 	void camera(Shader shader);
 public:
