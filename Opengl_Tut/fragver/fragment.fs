@@ -16,10 +16,13 @@ struct Light {
     vec3 diffuse;
     vec3 specular;
     vec3 position;
+    vec3 direction;
 
     float constant;
     float linear;
     float quadratic;
+    float cutoff_in;
+    float cutoff_out;
 };
 
 
@@ -33,6 +36,9 @@ void main()
     float diff;
     float distance;
     float attenunation;
+    float theta;
+    float epsilon;
+    float intensity;
 	vec3 ambient;
     vec3 diffuse;
     vec3 specular;
@@ -42,23 +48,31 @@ void main()
     vec3 view_dir;
     vec3 reflect_dir;
 
+    light_dir = normalize(light.position - frag_pos);
+
+    theta = dot(light_dir, normalize(-light.direction));
+    epsilon = light.cutoff_in - light.cutoff_out;
+    intensity = clamp((theta - light.cutoff_out) / epsilon, 0.0, 1.0);
+
     distance = length(light.position - frag_pos);
     attenunation = 1.0 / (light.constant + light.linear * distance + light.quadratic * (distance * distance));
 
-    ambient = (light.ambient * vec3(texture(material.diffuse, tex_coord))) * attenunation;
+    ambient = light.ambient * vec3(texture(material.diffuse, tex_coord));
 
     norm = normalize(normal);
-    light_dir = normalize(light.position - frag_pos);
 
     diff = max(dot(norm, light_dir), 0.0);
-    diffuse = (light.diffuse * diff * vec3(texture(material.diffuse, tex_coord))) * attenunation;
+    diffuse = (light.diffuse * diff * vec3(texture(material.diffuse, tex_coord))) * intensity;
 
     view_dir = normalize(view_pos - frag_pos);
-    //light_dir는 현재 fragment에서 광원으로 향하는 방향이므로 -, 법선 벡터가 필요하므로 norm
     reflect_dir = reflect(-light_dir, norm);
 
     spec = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
-    specular = (light.specular * spec * vec3(texture(material.specular, tex_coord))) * attenunation;
+    specular = (light.specular * spec * vec3(texture(material.specular, tex_coord))) * intensity;
+
+    ambient *= attenunation;
+    diffuse *= attenunation;
+    specular *= attenunation;
     
     result = ambient + diffuse + specular;
 
