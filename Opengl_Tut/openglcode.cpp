@@ -17,7 +17,8 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(7.0f, 2.0f, -10.0f);
+	light_pos = glm::vec3(0.0f, 5.0f, -0.0f);
+	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
@@ -41,6 +42,15 @@ void openglcode::set_n_run() {
 		glm::vec3(5.0f, 2.2f, 3.0f),
 		glm::vec3(5.5f, 12.0f, 5.4f),
 		glm::vec3(7.2f, -5.5f, 7.1f)
+	};
+
+	glm::vec3 point_lights_position[] = {
+		glm::vec3(14.0f, 0.0f, 0.0f),
+		glm::vec3(-10.0f, 0.0f, 0.0f),
+		glm::vec3(0.0f, 5.0f, 0.0f),
+		glm::vec3(0.0f, -5.0f, 0.0f),
+		glm::vec3(0.0f, 0.0f, 10.0f),
+		glm::vec3(0.0f, 0.0f, -10.0f)
 	};
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -87,52 +97,67 @@ void openglcode::set_n_run() {
 
 		process_input(window);
 
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		light_shader.use();
-		light_shader.set_vec3("light.position", light_pos);
-		light_shader.set_vec3("view_pos", camera_pos);
 
-		light_shader.set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
-		light_shader.set_vec3("light.diffuse", 1.0f, 1.0f, 1.0f);
-		light_shader.set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
+		light_shader.use();
+
+		for (int i = 0; i < 6; i++) {
+			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].position", point_lights_position[i]);
+			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].ambient", 0.5f, 0.05f, 0.5f);
+			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].diffuse", 0.3f, 0.3f, 0.3f);
+			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f);
+			light_shader.set_float("point_lights[" + std::to_string(i) + "].constant", 1.0f);
+			light_shader.set_float("point_lights[" + std::to_string(i) + "].linear", 0.09f);
+			light_shader.set_float("point_lights[" + std::to_string(i) + "].quadraitc", 0.032f);
+		}
 
 		light_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
 		light_shader.set_vec3("material.diffuse", 1.0f, 0.5f, 0.31f);
 		light_shader.set_vec3("material.specular", 0.5f, 0.5f, 0.5f);
 		light_shader.set_float("material.shininess", 32.0f);
 
-
-		camera(light_shader);
-
-		glBindVertexArray(vao);
-
 		glm::mat4 model = glm::mat4(1.0f);
-		float angle = 20.0f;
+		light_shader.set_mat4("model", model);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, spec_tex);
 
-		light_shader.set_mat4("model", model);
+		camera(light_shader);
 
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(vao);
 
+		for (int i = 0; i < 14; i++) {
+			glm::mat4 model = glm::mat4(1.0f);
+			float angle = 20.0f * i;
+
+			model = glm::translate(model, cube_positions[i]);
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+
+			light_shader.set_mat4("model", model);
+
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+
+		
 		cube_shader.use();
-
-		model = glm::mat4(1.0f);
-
 		camera(cube_shader);
 
-		model = glm::translate(model, light_pos);
-		model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
+		for (int i = 0; i < 6; i++) {
+			glm::mat4 model = glm::mat4(1.0f);
+			float angle = 20.0f;
 
-		cube_shader.set_mat4("model", model);
+			model = glm::translate(model, point_lights_position[i]);
+			model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
 
-		glBindVertexArray(cube_vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+			cube_shader.set_mat4("model", model);
+
+			glBindVertexArray(cube_vao);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+		}
+		
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
