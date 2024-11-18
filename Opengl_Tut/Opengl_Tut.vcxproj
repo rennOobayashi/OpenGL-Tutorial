@@ -135,10 +135,12 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="mesh.cpp" />
     <ClCompile Include="openglcode.cpp" />
     <ClCompile Include="stb_image.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="mesh.h" />
     <ClInclude Include="openglcode.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />

@@ -17,6 +17,7 @@
 class openglcode
 {
 private:
+
 	GLFWwindow* window;
 	glm::vec3 camera_pos;
 	glm::vec3 camera_up;
