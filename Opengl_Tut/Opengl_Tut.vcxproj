@@ -104,13 +104,13 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\glm;C:\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\inhee\source\repos\Opengl_Tut\assimp\include;C:\glm;C:\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\glfw-3.4\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\inhee\source\repos\Opengl_Tut\assimp\lib\Debug;C:\glfw-3.4\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,26 +121,28 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\glm;C:\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\inhee\source\repos\Opengl_Tut\assimp\include;C:\glm;C:\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\glfw-3.4\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Users\inhee\source\repos\Opengl_Tut\assimp\lib\Debug;C:\glfw-3.4\lib-vc2022;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glfw3.lib;opengl32.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh.cpp" />
+    <ClCompile Include="model.cpp" />
     <ClCompile Include="openglcode.cpp" />
     <ClCompile Include="stb_image.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mesh.h" />
+    <ClInclude Include="model.h" />
     <ClInclude Include="openglcode.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />

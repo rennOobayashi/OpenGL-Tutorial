@@ -1,14 +1,6 @@
-#define STB_IMAGE_STATIC //전역 대신 정적 네임 스페이스를 사용하여 중복 정의 문제 방지
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
-#include "shader.h"
+#include "model.h"
 
-#include <glad/glad.h>
 #include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
 
 #include <iostream>
 #define X 1280

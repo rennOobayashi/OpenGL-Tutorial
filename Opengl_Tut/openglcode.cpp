@@ -57,6 +57,9 @@ void openglcode::set_n_run() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+#ifdef __APPLE__
+	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
 	window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
 	if (window == NULL) {
@@ -76,17 +79,11 @@ void openglcode::set_n_run() {
 		return;
 	}
 
-	Shader light_shader("fragver/vertex.vs", "fragver/fragment.fs");
 	Shader cube_shader("fragver/cube_vertex.vs", "fragver/cube_fragment.fs");
 
-	draw_square();
+	Shader shader("fragver/model_vertex.vs", "fragver/model_fragment.fs");
 
-	diff_tex = load_texture("texture/watashi.png");
-	spec_tex = load_texture("texture/watashi_specular.png");
-
-	light_shader.use();
-	light_shader.set_int("material.diffuse", 0);
-	light_shader.set_int("material.specular", 1);
+	Model obj_model("object_model/backpack.obj");
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -100,64 +97,18 @@ void openglcode::set_n_run() {
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		light_shader.use();
+		shader.use();
 
-		for (int i = 0; i < 6; i++) {
-			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].position", point_lights_position[i]);
-			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].ambient", 0.5f, 0.05f, 0.5f);
-			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].diffuse", 0.3f, 0.3f, 0.3f);
-			light_shader.set_vec3("point_lights[" + std::to_string(i) + "].specular", 1.0f, 1.0f, 1.0f);
-			light_shader.set_float("point_lights[" + std::to_string(i) + "].constant", 1.0f);
-			light_shader.set_float("point_lights[" + std::to_string(i) + "].linear", 0.09f);
-			light_shader.set_float("point_lights[" + std::to_string(i) + "].quadraitc", 0.032f);
-		}
-
-		light_shader.set_vec3("material.ambient", 1.0f, 0.5f, 0.31f);
-		light_shader.set_vec3("material.diffuse", 1.0f, 0.5f, 0.31f);
-		light_shader.set_vec3("material.specular", 0.5f, 0.5f, 0.5f);
-		light_shader.set_float("material.shininess", 32.0f);
+		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+		shader.set_mat4("projection", projection);
+		shader.set_mat4("view", view);
 
 		glm::mat4 model = glm::mat4(1.0f);
-		light_shader.set_mat4("model", model);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
-
-		camera(light_shader);
-
-		glBindVertexArray(vao);
-
-		for (int i = 0; i < 14; i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			float angle = 20.0f * i;
-
-			model = glm::translate(model, cube_positions[i]);
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-
-			light_shader.set_mat4("model", model);
-
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-
-		
-		cube_shader.use();
-		camera(cube_shader);
-
-		for (int i = 0; i < 6; i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			float angle = 20.0f;
-
-			model = glm::translate(model, point_lights_position[i]);
-			model = glm::rotate(model, (float)glfwGetTime() * (glm::radians(angle) + 1), glm::vec3(1.0f, 0.3f, 0.5f));
-
-			cube_shader.set_mat4("model", model);
-
-			glBindVertexArray(cube_vao);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
-		
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::scale (model, glm::vec3(1.0f, 1.0f, 1.0f));
+		shader.set_mat4("model", model);
+		obj_model.draw(shader);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -167,7 +118,6 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &veo);
-	glDeleteProgram(light_shader.id);
 
 	glfwTerminate();
 

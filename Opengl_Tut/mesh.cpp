@@ -9,7 +9,7 @@ Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std:
 }
 
 void Mesh::setup_mesh() {
-	glGenBuffers(1, &vao);
+	glGenVertexArrays(1, &vao);
 
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &ebo);
@@ -35,13 +35,31 @@ void Mesh::setup_mesh() {
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoords));
 
+	//vertex textrue coords
+	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
+
+	//vertex textrue coords
+	glEnableVertexAttribArray(4);
+	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
+
+	//vertex textrue coords
+	glEnableVertexAttribArray(5);
+	glVertexAttribIPointer(5, 4, GL_INT, sizeof(Vertex), (void*)offsetof(Vertex, m_bone_ids));
+
+	//vertex textrue coords
+	glEnableVertexAttribArray(6);
+	glVertexAttribPointer(4, 6, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_weights));
+
 	glBindVertexArray(0);
 
 }
 
-void Mesh::draw(Shader shader) {
+void Mesh::draw(Shader& shader) {
 	unsigned int diffuse_nr = 1;
 	unsigned int specular_nr = 1;
+	unsigned int normal_nr = 1;
+	unsigned int height_nr = 1;
 
 	for (unsigned int i = 0; i < textures.size(); i++) {
 		std::string number;
@@ -58,13 +76,23 @@ void Mesh::draw(Shader shader) {
 		else if (name == "texture_specular") {
 			number = std::to_string(specular_nr++);
 		}
+		//if texture type is specular
+		else if (name == "texture_normal") {
+			number = std::to_string(normal_nr++);
+		}
+		//if texture type is specular
+		else if (name == "texture_height") {
+			number = std::to_string(height_nr++);
+		}
 		//example: material.diffuse1
-		shader.set_float("material." + name + number.c_str(), i);
+		glUniform1i(glGetUniformLocation(shader.id, (name + number).c_str()), i);
 
-		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, textures[i].id);
 	}
 
 	glBindVertexArray(vao);
 	glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
 	glBindVertexArray(0);
+
+	glActiveTexture(GL_TEXTURE0);
 }
