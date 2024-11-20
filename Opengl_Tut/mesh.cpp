@@ -49,7 +49,7 @@ void Mesh::setup_mesh() {
 
 	//vertex textrue coords
 	glEnableVertexAttribArray(6);
-	glVertexAttribPointer(4, 6, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_weights));
+	glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, m_weights));
 
 	glBindVertexArray(0);
 
@@ -68,6 +68,7 @@ void Mesh::draw(Shader& shader) {
 		glActiveTexture(GL_TEXTURE0 + i);
 
 		name = textures[i].type;
+
 		//if texture type is diffuse
 		if (name == "texture_diffuse") { 
 			number = std::to_string(diffuse_nr++);

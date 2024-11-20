@@ -26,10 +26,7 @@ private:
 	float delta_time;
 	float last_frame;
 
-	void draw_square();
-	unsigned int load_texture(char const* path);
 	void process_input(GLFWwindow* window);
-	void camera(Shader shader);
 public:
 	void init();
 	void set_n_run();
