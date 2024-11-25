@@ -33,6 +33,7 @@ private:
 	float camera_speed;
 	float delta_time;
 	float last_frame;
+	float outline_scale;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();

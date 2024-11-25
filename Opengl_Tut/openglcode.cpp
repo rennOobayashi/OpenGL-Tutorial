@@ -23,6 +23,8 @@ void openglcode::init() {
 	delta_time = 0.0f;
 	last_frame = 0.0f;
 
+	outline_scale = 1.07f;
+
 	glfwInit();
 }
 
@@ -84,7 +86,15 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 
+	glEnable(GL_STENCIL_TEST);
+	//(stencil 함수 설정, stencil test ref 값 지정, ref 값과 저장된 stencil 값	 모두에 and 연산 수행될 mask 지정(초기값 1))
+	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+	//(stencil test가 실패 했을 때, stencil은 통과 했지만 depth test를 실패 했을 때, 다 통과했을 때)
+	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+
 	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
+	Shader shader_single_color("fragver/vertex.vs", "fragver/single_color_fragment.fs");
 
 	draw_square();
 
@@ -93,7 +103,6 @@ void openglcode::set_n_run() {
 
 	shader.use();
 	shader.set_int("texture1", 0);
-	shader.set_int("texture2", 1);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -106,28 +115,67 @@ void openglcode::set_n_run() {
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
-
-		shader.use();
+		shader_single_color.use();
+		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+		shader_single_color.set_mat4("projection", projection);
+		shader_single_color.set_mat4("view", view);
+
+
+		shader.use();
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
 
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+
 		glBindVertexArray(vao);
 
-		for (int i = 0; i < 2; i++) {
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cube_positions[i]);
-			shader.set_mat4("model", model);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+		//반복 횟수가 2개 이하면 반복문을 쓰지 않는 것이 좋습니다.
+		//cube 1
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		shader.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//cube2
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(1.0f, 0.0f, 1.0f));
+		shader.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		shader_single_color.use();
+
+		glBindVertexArray(vao);
+		glBindTexture(GL_TEXTURE_2D, spec_tex);
+
+		//cube1
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		model = glm::scale(model, glm::vec3(outline_scale));
+		shader_single_color.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		//cube2
+		model = glm::mat4(1.0f);
+		model = glm::translate(model, glm::vec3(1.0f, 0.0f, 1.0f));
+		model = glm::scale(model, glm::vec3(outline_scale));
+		shader_single_color.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		
+		glBindVertexArray(0);
+		glStencilMask(0xFF);
+		glStencilFunc(GL_ALWAYS, 0, 0xFF);
+		glEnable(GL_DEPTH_TEST);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -147,47 +195,47 @@ void openglcode::set_n_run() {
 void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
 
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
 	};
 	//삼각형 점 위치
 	unsigned int indices[] = {
