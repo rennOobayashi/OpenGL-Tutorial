@@ -25,7 +25,7 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vbo, vao, veo, cube_vao, fbo, rbo, qao, qbo;
+	unsigned int vbo, vao, veo, cube_vao, fao, fbo, rbo, qao, qbo;
 	unsigned int tex_color_buffer;
 	char info_log[512];
 	unsigned int texture1, texture2;

@@ -84,7 +84,7 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
-	Shader scene_shader("fragver/framebuffer_vertex.vs", "fragver/framebuffer_fragment.fs");
+	Shader scene_shader("fragver/framebuffer_vertex.vs", "fragver/framebuffer_post_processing_fragment.fs");
 
 	draw_square();
 
@@ -231,20 +231,20 @@ void openglcode::draw_square() {
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
+	glGenVertexArrays(1, &vao);
+
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &veo);
-
-	glGenVertexArrays(1, &vao);
 
 	//vertex array 오브젝트 바운딩
 	glBindVertexArray(vao);
 
 	//Open이 사용하기 위해 vertex 리스트 복사
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
 
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
@@ -358,11 +358,9 @@ void openglcode::frame_buffer() {
 
 	glGenRenderbuffers(1, &rbo);
 	glBindBuffer(GL_RENDERBUFFER, rbo);
-	glBindBuffer(GL_RENDERBUFFER, 0);
 
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, X, Y);
 	
-	//target, attachment, texture target, texture, mipmap level
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
