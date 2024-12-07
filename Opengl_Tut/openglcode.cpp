@@ -81,20 +81,10 @@ void openglcode::set_n_run() {
 		return;
 	}
 
-	stbi_set_flip_vertically_on_load(1);
-
 	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-
-	glEnable(GL_STENCIL_TEST);
-	//(stencil 함수 설정, stencil test ref 값 지정, ref 값과 저장된 stencil 값	 모두에 and 연산 수행될 mask 지정(초기값 1))
-	glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-	//(stencil test가 실패 했을 때, stencil은 통과 했지만 depth test를 실패 했을 때, 다 통과했을 때)
-	glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
-
 
 	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
-	Shader shader_single_color("fragver/vertex.vs", "fragver/single_color_fragment.fs");
+	Shader scene_shader("fragver/framebuffer_vertex.vs", "fragver/framebuffer_fragment.fs");
 
 	draw_square();
 
@@ -103,6 +93,14 @@ void openglcode::set_n_run() {
 
 	shader.use();
 	shader.set_int("texture1", 0);
+
+	scene_shader.use();
+	scene_shader.set_int("screen_texture", 0);
+
+	frame_buffer();
+
+	//wireframe
+	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -113,69 +111,43 @@ void openglcode::set_n_run() {
 
 		process_input(window);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glEnable(GL_DEPTH_TEST);
+
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
-		shader_single_color.use();
+		shader.use();
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-		shader_single_color.set_mat4("projection", projection);
-		shader_single_color.set_mat4("view", view);
-
-
-		shader.use();
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
 
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
-
 		glBindVertexArray(vao);
-
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
-
-		//반복 횟수가 2개 이하면 반복문을 쓰지 않는 것이 좋습니다.
-		//cube 1
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
 		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		//cube2
 		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0f, 0.0f, 1.0f));
+		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
 		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
-		shader_single_color.use();
-
-		glBindVertexArray(vao);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
-
-		//cube1
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
-		model = glm::scale(model, glm::vec3(outline_scale));
-		shader_single_color.set_mat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		//cube2
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(1.0f, 0.0f, 1.0f));
-		model = glm::scale(model, glm::vec3(outline_scale));
-		shader_single_color.set_mat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		
 		glBindVertexArray(0);
-		glStencilMask(0xFF);
-		glStencilFunc(GL_ALWAYS, 0, 0xFF);
-		glEnable(GL_DEPTH_TEST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glDisable(GL_DEPTH_TEST);
+
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		scene_shader.use();
+		glBindVertexArray(qao);
+		glBindTexture(GL_TEXTURE_2D, tex_color_buffer);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -183,9 +155,13 @@ void openglcode::set_n_run() {
 		glfwPollEvents();
 	}
 	glDeleteVertexArrays(1, &vao);
+	glDeleteVertexArrays(1, &qao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &veo);
+	glDeleteBuffers(1, &qbo);
 	glDeleteProgram(shader.id);
+	glDeleteRenderbuffers(1, &rbo);
+	glDeleteFramebuffers(1, &fbo);
 
 	glfwTerminate();
 
@@ -243,6 +219,17 @@ void openglcode::draw_square() {
 		1, 3, 2
 	};
 
+	float quad_vertex[] = {
+		//position     //texture color
+		-1.0f,  1.0f,  0.0f,  1.0f,
+		-1.0f, -1.0f,  0.0f,  0.0f,
+		 1.0f, -1.0f,  1.0f,  0.0f,
+
+		-1.0f,  1.0f,  0.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,  0.0f,
+		 1.0f,  1.0f,  1.0f,  1.0f
+	};
+
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 	glGenBuffers(1, &vbo);
 	glGenBuffers(1, &veo);
@@ -262,28 +249,40 @@ void openglcode::draw_square() {
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //offset 지정(3 * sizeof(float))
 	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //offset 지정(3 * sizeof(float))
 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 
-	glBindVertexArray(0);
+	//glBindVertexArray(0);
 
 	glGenVertexArrays(1, &cube_vao);
 	glBindVertexArray(cube_vao);
 	// VBO를 바인딩 바인딩하기만 하면 됩니다. 컨테이너의 VBO 데이터는 이미 정확한 데이터를 가지고 있습니다.
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	// vertex attribute를 설정합니다(램프를 위한 위치 데이터만).
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
 	glBindVertexArray(0);
+
+	glGenVertexArrays(1, &qao);
+	glGenBuffers(1, &qbo);
+	glBindVertexArray(qao);
+	glBindBuffer(GL_ARRAY_BUFFER, qbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex), &quad_vertex, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
 unsigned int openglcode::load_texture(char const* path) {
@@ -329,9 +328,47 @@ unsigned int openglcode::load_texture(char const* path) {
 	return texture;
 }
 
-
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
+}
+
+void openglcode::frame_buffer() {
+	//최소한 하나의 buffer 첨부
+	//최소한 하나의 color 첨부
+	//모든 첨부 buffer들은 메모리에 할당되어야 함
+	//각 buffer들은 샘플 갯수가 같아야 함
+
+	//enableframebuffer
+	glGenFramebuffers(1, &fbo);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+
+	glGenTextures(1, &tex_color_buffer);
+	glBindTexture(GL_TEXTURE_2D, tex_color_buffer);
+
+	//텍스쳐 크기를 창크기로 설정하고 data파라미터에 null(메모리에 할당만 하기 때문)
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, X, Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, X, Y, 0,
+	//	GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_color_buffer, 0);
+
+	glGenRenderbuffers(1, &rbo);
+	glBindBuffer(GL_RENDERBUFFER, rbo);
+	glBindBuffer(GL_RENDERBUFFER, 0);
+
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, X, Y);
+	
+	//target, attachment, texture target, texture, mipmap level
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void openglcode::process_input(GLFWwindow* window) {

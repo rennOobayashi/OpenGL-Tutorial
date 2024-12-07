@@ -25,7 +25,8 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vbo, vao, veo, cube_vao;
+	unsigned int vbo, vao, veo, cube_vao, fbo, rbo, qao, qbo;
+	unsigned int tex_color_buffer;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, spec_tex;
@@ -37,6 +38,7 @@ private:
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
+	void frame_buffer();
 	unsigned int load_texture(char const* path);
 public:
 	void init();
