@@ -55,6 +55,15 @@ void openglcode::set_n_run() {
 		glm::vec3(0.0f, 0.0f, -10.0f)
 	};
 
+	std::vector<std::string> faces{
+		"texture/skybox/right.jpg",
+		"texture/skybox/left.jpg",
+		"texture/skybox/top.jpg",
+		"texture/skybox/bottom.jpg",
+		"texture/skybox/front.jpg",
+		"texture/skybox/back.jpg"
+	};
+
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -84,9 +93,12 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
-	Shader scene_shader("fragver/framebuffer_vertex.vs", "fragver/framebuffer_post_processing_fragment.fs");
+	Shader skybox_shader("fragver/skybox_vertex.vs", "fragver/skybox_fragment.fs");
+
+	cubemap_texture = load_cubemap(faces);
 
 	draw_square();
+	draw_skybox();
 
 	diff_tex = load_texture("texture/watashi.png");
 	spec_tex = load_texture("texture/watashi_specular.png");
@@ -94,13 +106,8 @@ void openglcode::set_n_run() {
 	shader.use();
 	shader.set_int("texture1", 0);
 
-	scene_shader.use();
-	scene_shader.set_int("screen_texture", 0);
-
-	frame_buffer();
-
-	//wireframe
-	//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	skybox_shader.use();
+	skybox_shader.set_int("skybox", 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -108,15 +115,11 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
-
 		process_input(window);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glEnable(GL_DEPTH_TEST);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
 		glm::mat4 model = glm::mat4(1.0f);
@@ -128,7 +131,7 @@ void openglcode::set_n_run() {
 		glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, -1.0f));
+		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
 		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
@@ -138,16 +141,19 @@ void openglcode::set_n_run() {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glDisable(GL_DEPTH_TEST);
+		//성능향상을 위해 skybox를 맨 마지막에 렌더링
+		glDepthFunc(GL_LEQUAL);//skybox는 오브젝트 뒤에 그려짐
+		skybox_shader.use();
+		view = glm::mat4(glm::mat3(glm::lookAt(camera_pos, camera_pos + camera_front, camera_up)));
+		skybox_shader.set_mat4("view", view);
+		skybox_shader.set_mat4("projection", projection);
 
-		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-
-		scene_shader.use();
-		glBindVertexArray(qao);
-		glBindTexture(GL_TEXTURE_2D, tex_color_buffer);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
+		glBindVertexArray(sao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+		glDepthFunc(GL_LESS);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -155,17 +161,111 @@ void openglcode::set_n_run() {
 		glfwPollEvents();
 	}
 	glDeleteVertexArrays(1, &vao);
-	glDeleteVertexArrays(1, &qao);
+	glDeleteVertexArrays(1, &sao);
 	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &sbo);
 	glDeleteBuffers(1, &veo);
-	glDeleteBuffers(1, &qbo);
 	glDeleteProgram(shader.id);
-	glDeleteRenderbuffers(1, &rbo);
-	glDeleteFramebuffers(1, &fbo);
 
 	glfwTerminate();
 
 	return;
+}
+
+unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
+	unsigned int texture_id;
+	int width, height, color_ch;
+
+	glGenTextures(1, &texture_id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
+
+	for (unsigned int i = 0; i < faces.size(); i++) {
+		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &color_ch, 0);
+		GLenum format = GL_RGB;
+
+		if (data) {
+			if (color_ch == 1) {
+				format = GL_RED;
+			}
+			else if (color_ch == 3) {
+				format = GL_RGB;
+			}
+			else if (color_ch == 4) {
+				format = GL_RGBA;
+			}
+
+			glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		}
+		else {
+			std::cout << "Cubemap texture failed to load at path: " << faces[i] << std::endl;
+		}
+
+		stbi_image_free(data);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	return texture_id;
+}
+
+void openglcode::draw_skybox() {
+	float skybox_vertices[] = {
+		//positions          
+		-1.0f,  1.0f, -1.0f,
+		-1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f, -1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+
+		-1.0f, -1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,
+		-1.0f, -1.0f,  1.0f,
+
+		-1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f, -1.0f,
+		 1.0f,  1.0f,  1.0f,
+		 1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f,  1.0f,
+		-1.0f,  1.0f, -1.0f,
+
+		-1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f, -1.0f,
+		 1.0f, -1.0f, -1.0f,
+		-1.0f, -1.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f
+	};
+
+	glGenVertexArrays(1, &sao);
+	glGenBuffers(1, &sbo);
+	glBindVertexArray(sao);
+	glBindBuffer(GL_ARRAY_BUFFER, sbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(skybox_vertices), &skybox_vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 }
 
 void openglcode::draw_square() {
@@ -219,17 +319,6 @@ void openglcode::draw_square() {
 		1, 3, 2
 	};
 
-	float quad_vertex[] = {
-		//position     //texture color
-		-1.0f,  1.0f,  0.0f,  1.0f,
-		-1.0f, -1.0f,  0.0f,  0.0f,
-		 1.0f, -1.0f,  1.0f,  0.0f,
-
-		-1.0f,  1.0f,  0.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,  0.0f,
-		 1.0f,  1.0f,  1.0f,  1.0f
-	};
-
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 	glGenVertexArrays(1, &vao);
 
@@ -257,39 +346,12 @@ void openglcode::draw_square() {
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //offset 지정(3 * sizeof(float))
-
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//glBindVertexArray(0);
-
-	glGenVertexArrays(1, &cube_vao);
-	glBindVertexArray(cube_vao);
-	// VBO를 바인딩 바인딩하기만 하면 됩니다. 컨테이너의 VBO 데이터는 이미 정확한 데이터를 가지고 있습니다.
-	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	// vertex attribute를 설정합니다(램프를 위한 위치 데이터만).
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-	glBindVertexArray(0);
-
-	glGenVertexArrays(1, &qao);
-	glGenBuffers(1, &qbo);
-	glBindVertexArray(qao);
-	glBindBuffer(GL_ARRAY_BUFFER, qbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex), &quad_vertex, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 }
 
 unsigned int openglcode::load_texture(char const* path) {
 	unsigned int texture;
 	int width, height, color_ch;
-	GLenum format;
-	format = GL_RGB;
+	GLenum format = GL_RGB;
 
 	glGenTextures(1, &texture);
 	data = stbi_load(path, &width, &height, &color_ch, 0);
@@ -330,43 +392,6 @@ unsigned int openglcode::load_texture(char const* path) {
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
-}
-
-void openglcode::frame_buffer() {
-	//최소한 하나의 buffer 첨부
-	//최소한 하나의 color 첨부
-	//모든 첨부 buffer들은 메모리에 할당되어야 함
-	//각 buffer들은 샘플 갯수가 같아야 함
-
-	//enableframebuffer
-	glGenFramebuffers(1, &fbo);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-
-	glGenTextures(1, &tex_color_buffer);
-	glBindTexture(GL_TEXTURE_2D, tex_color_buffer);
-
-	//텍스쳐 크기를 창크기로 설정하고 data파라미터에 null(메모리에 할당만 하기 때문)
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, X, Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-	//glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, X, Y, 0,
-	//	GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, NULL);
-
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, tex_color_buffer, 0);
-
-	glGenRenderbuffers(1, &rbo);
-	glBindBuffer(GL_RENDERBUFFER, rbo);
-
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, X, Y);
-	
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-		std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void openglcode::process_input(GLFWwindow* window) {
