@@ -1,12 +1,17 @@
 #version 330 core
 out vec4 frag_color;
 
-in vec3 our_color;    
-in vec2 tex_coord;
+in vec3 normal;
+in vec3 position;
 
-uniform sampler2D texture1;
+uniform vec3 camera_pos;    
+uniform samplerCube skybox;
 
 void main()
 {
-    frag_color = texture(texture1, tex_coord);
+    // view/camera 방향 벡터 i를 계산
+    vec3 i = normalize(position - camera_pos);
+    //반사 벡터 r 계산(reflect함수로)
+    vec3 r = reflect(i, normalize(normal));
+    frag_color = vec4(texture(skybox, r).rgb, 1.0);
 }

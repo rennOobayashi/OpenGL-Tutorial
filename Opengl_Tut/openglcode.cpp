@@ -127,10 +127,11 @@ void openglcode::set_n_run() {
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
+		shader.set_vec3("camera_pos", camera_pos);
 
 		glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture);
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
 		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -164,7 +165,6 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &sao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &sbo);
-	glDeleteBuffers(1, &veo);
 	glDeleteProgram(shader.id);
 
 	glfwTerminate();
@@ -271,59 +271,53 @@ void openglcode::draw_skybox() {
 void openglcode::draw_square() {
 	//x, y ,z
 	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f, -1.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  0.0f,  1.0f,
 
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f, -1.0f,  0.0f,  0.0f,
 
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f,  0.0f,  0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f,  1.0f,  0.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
-	};
-	//삼각형 점 위치
-	unsigned int indices[] = {
-		0, 1, 3,
-		1, 3, 2
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, -1.0f,  0.0f,
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 	glGenVertexArrays(1, &vao);
 
 	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &veo);
 
 	//vertex array 오브젝트 바운딩
 	glBindVertexArray(vao);
@@ -332,20 +326,17 @@ void openglcode::draw_square() {
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
 
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, veo);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), &indices, GL_STATIC_DRAW);
-
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(3 * sizeof(float)));
 
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float))); //offset 지정(3 * sizeof(float))
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 9 * sizeof(float), (void*)(6 * sizeof(float))); //offset 지정(3 * sizeof(float))
 }
 
 unsigned int openglcode::load_texture(char const* path) {
