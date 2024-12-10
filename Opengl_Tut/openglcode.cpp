@@ -104,7 +104,7 @@ void openglcode::set_n_run() {
 	spec_tex = load_texture("texture/watashi_specular.png");
 
 	shader.use();
-	shader.set_int("texture1", 0);
+	shader.set_int("skybox", 0);
 
 	skybox_shader.use();
 	skybox_shader.set_int("skybox", 0);

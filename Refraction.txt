@@ -1,0 +1,5 @@
+air          - 1.0
+water      - 1.33
+ice         - 1.309
+glass      - 1.52
+diamond - 2.24
