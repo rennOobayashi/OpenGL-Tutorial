@@ -1,14 +1,14 @@
-#version 420 core
+#version 330 core
 out vec4 frag_color;
-layout (depth_greater) out float gl_FragDepth;
 
-in vec2 tex_coord;
+in VS_OUT
+{
+    vec2 tex_coord;
+} fs_in;
 
-uniform sampler2D front_tex;
-uniform sampler2D back_tex;
+uniform sampler2D texture1;
 
 void main()
 {
-    frag_color = vec4(1.0);
-    gl_FragDepth = gl_FragCoord.z + 0.1;
+    frag_color = texture(texture1, fs_in.tex_coord);
 }

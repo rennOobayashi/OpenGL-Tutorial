@@ -105,8 +105,7 @@ void openglcode::set_n_run() {
 	spec_tex = load_texture("texture/koronesuki.png");
 
 	shader.use();
-	shader.set_int("front_tex", 0);
-	shader.set_int("back_tex", 1);
+	shader.set_int("texture1", 0);
 
 	skybox_shader.use();
 	skybox_shader.set_int("skybox", 0);
@@ -133,8 +132,6 @@ void openglcode::set_n_run() {
 		glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
 		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
