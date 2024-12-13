@@ -25,8 +25,6 @@ void openglcode::init() {
 
 	outline_scale = 1.07f;
 
-	projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-
 	glfwInit();
 }
 
@@ -95,7 +93,8 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 
-	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
+	Shader shaderx("fragver/vertex.vs", "fragver/fragment1.fs");
+	Shader shadery("fragver/vertex.vs", "fragver/fragment2.fs");
 	Shader skybox_shader("fragver/skybox_vertex.vs", "fragver/skybox_fragment.fs");
 
 	cubemap_texture = load_cubemap(faces);
@@ -106,13 +105,17 @@ void openglcode::set_n_run() {
 	diff_tex = load_texture("texture/watashi.png");
 	spec_tex = load_texture("texture/koronesuki.png");
 
-	shader.use();
-	shader.set_int("texture1", 0);
+	shaderx.use();
+	shaderx.set_int("texture1", 0);
+
+	shadery.use();
+	shadery.set_int("texture1", 0);
 
 	skybox_shader.use();
 	skybox_shader.set_int("skybox", 0);
 
-	glUniformBlockBinding(shader.id, glGetUniformBlockIndex(shader.id, "matrices"), 0);
+	glUniformBlockBinding(shaderx.id, glGetUniformBlockIndex(shaderx.id, "matrices"), 0);
+	glUniformBlockBinding(shaderx.id, glGetUniformBlockIndex(shadery.id, "matrices"), 0);
 	matrices();
 
 	while (!glfwWindowShouldClose(window)) {
@@ -122,6 +125,9 @@ void openglcode::set_n_run() {
 		last_frame = current_frame;
 
 		process_input(window);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
@@ -135,22 +141,22 @@ void openglcode::set_n_run() {
 		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		glBindVertexArray(vao);
-		shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
+		shaderx.use();
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
-		shader.set_mat4("model", model);
+		shaderx.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 
+		shadery.use();
 		model = glm::mat4(1.0f);
 		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		shader.set_mat4("model", model);
+		shadery.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
 		//성능향상을 위해 skybox를 맨 마지막에 렌더링
 		glDepthFunc(GL_LEQUAL);//skybox는 오브젝트 뒤에 그려짐
 		skybox_shader.use();
+		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		view = glm::mat4(glm::mat3(glm::lookAt(camera_pos, camera_pos + camera_front, camera_up)));
 		skybox_shader.set_mat4("view", view);
 		skybox_shader.set_mat4("projection", projection);
@@ -171,7 +177,8 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &sao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &sbo);
-	glDeleteProgram(shader.id);
+	glDeleteProgram(shaderx.id);
+	glDeleteProgram(shadery.id);
 
 	glfwTerminate();
 
@@ -391,11 +398,13 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void openglcode::matrices() {
+	glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+
 	glGenBuffers(1, &ubo);
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4) , NULL, GL_STATIC_DRAW);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 2 * sizeof(glm::mat4));
+	glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
 
 	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));

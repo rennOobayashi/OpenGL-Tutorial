@@ -26,7 +26,6 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	glm::mat4 projection;
 	unsigned int vbo, vao, sao, sbo, ubo;
 	unsigned int tex_color_buffer;
 	char info_log[512];
