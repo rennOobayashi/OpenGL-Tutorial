@@ -25,6 +25,8 @@ void openglcode::init() {
 
 	outline_scale = 1.07f;
 
+	projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+
 	glfwInit();
 }
 
@@ -110,6 +112,9 @@ void openglcode::set_n_run() {
 	skybox_shader.use();
 	skybox_shader.set_int("skybox", 0);
 
+	glUniformBlockBinding(shader.id, glGetUniformBlockIndex(shader.id, "matrices"), 0);
+	matrices();
+
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
 
@@ -122,14 +127,15 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.use();
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-		shader.set_mat4("projection", projection);
-		shader.set_mat4("view", view);
+
+		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 		glBindVertexArray(vao);
+		shader.use();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
@@ -382,6 +388,18 @@ unsigned int openglcode::load_texture(char const* path) {
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
+}
+
+void openglcode::matrices() {
+	glGenBuffers(1, &ubo);
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4), NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	glBindBufferRange(GL_UNIFORM_BUFFER, 0, ubo, 0, 2 * sizeof(glm::mat4));
+
+	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
+	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void openglcode::process_input(GLFWwindow* window) {
