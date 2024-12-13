@@ -92,6 +92,7 @@ void openglcode::set_n_run() {
 
 	glEnable(GL_DEPTH_TEST);
 
+
 	Shader shader("fragver/vertex.vs", "fragver/fragment.fs");
 	Shader skybox_shader("fragver/skybox_vertex.vs", "fragver/skybox_fragment.fs");
 
