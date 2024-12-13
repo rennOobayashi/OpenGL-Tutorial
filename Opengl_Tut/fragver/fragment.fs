@@ -1,18 +1,17 @@
 #version 330 core
 out vec4 frag_color;
 
-in vec3 normal;
-in vec3 position;
+in vec2 tex_coord;
 
-uniform vec3 camera_pos;    
-uniform samplerCube skybox;
+uniform sampler2D front_tex;
+uniform sampler2D back_tex;
 
 void main()
 {
-    if (gl_FragCoord.x < 640) {
-        frag_color = vec4(1.0, 0.0, 0.0, 1.0);
+    if (gl_FrontFacing) {
+        frag_color = texture(front_tex, tex_coord);
     }
     else {
-        frag_color = vec4(0.0, 0.0, 1.0, 1.0);
+        frag_color = texture(back_tex, tex_coord);
     }
 }
