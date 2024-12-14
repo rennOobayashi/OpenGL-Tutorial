@@ -218,10 +218,10 @@ void openglcode::draw_skybox() {
 
 void openglcode::draw_square() {
 	float points[] = {
-		-0.5f,  0.5f, //left top
-		 0.5f,  0.5f, //right top
-		-0.5f, -0.5f, //left bottom
-		 0.5f, -0.5f  //right bottom
+		-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, //left top
+		 0.5f,  0.5f, 1.0f, 1.0f, 0.0f, //right top
+		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, //left bottom
+		 0.5f, -0.5f, 0.0f, 1.0f, 1.0f  //right bottom
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
@@ -240,7 +240,10 @@ void openglcode::draw_square() {
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
