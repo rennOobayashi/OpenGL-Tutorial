@@ -14,43 +14,51 @@ class Shader
 public:
     unsigned int id;
 
-    Shader(const char* vertex_path, const char* fragment_path) {
-        init(vertex_path, fragment_path);
+    Shader(const char* vertex_path, const char* fragment_path, const char* geometry_path) {
+        init(vertex_path, fragment_path, geometry_path);
     }
 
-    void init(const char* vertex_path, const char* fragment_path) {
+    void init(const char* vertex_path, const char* fragment_path, const char* geometry_path) {
         const char* v_shader_code;
         const char* f_shader_code;
+        const char* g_shader_code;
         std::string vertex_code;
         std::string fragment_code;
+        std::string geometry_code;
         std::ifstream v_shader_file;
         std::ifstream f_shader_file;
-        unsigned int vertex, fragment;
+        std::ifstream g_shader_file;
+        unsigned int vertex, fragment, geometry;
         int success;
         char info_log[512];
 
         //예외 받게 하기
         v_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
         f_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        g_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 
         try {
-            std::stringstream v_shader_stream, f_shader_stream;
+            std::stringstream v_shader_stream, f_shader_stream, g_shader_stream;
 
             //파일 열기
             v_shader_file.open(vertex_path);
             f_shader_file.open(fragment_path);
+            g_shader_file.open(geometry_path);
 
             //stream에 파일 버퍼 내용 읽기
             v_shader_stream << v_shader_file.rdbuf();
             f_shader_stream << f_shader_file.rdbuf();
+            g_shader_stream << g_shader_file.rdbuf();
 
             //파일 핸들러 닫기
             v_shader_file.close();
             f_shader_file.close();
+            g_shader_file.close();
 
             //stream을 string으로 변환
             vertex_code = v_shader_stream.str();
             fragment_code = f_shader_stream.str();
+            geometry_code = g_shader_stream.str();
         }
         catch (std::ifstream::failure) {
             std::cout << "ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n";
@@ -58,10 +66,10 @@ public:
 
         v_shader_code = vertex_code.c_str();
         f_shader_code = fragment_code.c_str();
+        g_shader_code = geometry_code.c_str();
 
         vertex = glCreateShader(GL_VERTEX_SHADER);
         glShaderSource(vertex, 1, &v_shader_code, NULL);
-
         glCompileShader(vertex);
 
         glGetProgramiv(vertex, GL_LINK_STATUS, &success);
@@ -80,10 +88,21 @@ public:
             std::cout << "ERROR::FRAGMENT::SHADER::COMPILATION_FAILED\n" << info_log << std::endl;
         }
 
+        geometry = glCreateShader(GL_GEOMETRY_SHADER);
+        glShaderSource(geometry, 1, &g_shader_code, NULL);
+        glCompileShader(geometry);
+
+        glGetProgramiv(geometry, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(geometry, 512, NULL, info_log);
+            std::cout << "ERROR::FRAGMENT::SHADER::COMPILATION_FAILED\n" << info_log << std::endl;
+        }
+
         id = glCreateProgram();
 
         glAttachShader(id, vertex);
         glAttachShader(id, fragment);
+        glAttachShader(id, geometry);
         glLinkProgram(id);
 
         glGetProgramiv(id, GL_LINK_STATUS, &success);
@@ -95,6 +114,7 @@ public:
         //연결 후 제거
         glDeleteShader(vertex);
         glDeleteShader(fragment);
+        glDeleteShader(geometry);
     }
 
     void use() const

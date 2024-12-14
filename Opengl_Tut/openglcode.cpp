@@ -92,81 +92,19 @@ void openglcode::set_n_run() {
 
 	glEnable(GL_DEPTH_TEST);
 
-
-	Shader shaderx("fragver/vertex.vs", "fragver/fragment1.fs");
-	Shader shadery("fragver/vertex.vs", "fragver/fragment2.fs");
-	Shader skybox_shader("fragver/skybox_vertex.vs", "fragver/skybox_fragment.fs");
-
-	cubemap_texture = load_cubemap(faces);
-
+	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs", "geofragver/geometry.gs");
 	draw_square();
-	draw_skybox();
-
-	diff_tex = load_texture("texture/watashi.png");
-	spec_tex = load_texture("texture/koronesuki.png");
-
-	shaderx.use();
-	shaderx.set_int("texture1", 0);
-
-	shadery.use();
-	shadery.set_int("texture1", 0);
-
-	skybox_shader.use();
-	skybox_shader.set_int("skybox", 0);
-
-	glUniformBlockBinding(shaderx.id, glGetUniformBlockIndex(shaderx.id, "matrices"), 0);
-	glUniformBlockBinding(shaderx.id, glGetUniformBlockIndex(shadery.id, "matrices"), 0);
-	matrices();
 
 	while (!glfwWindowShouldClose(window)) {
-		float current_frame = (float)glfwGetTime();
-
-		delta_time = current_frame - last_frame;
-		last_frame = current_frame;
-
 		process_input(window);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
-
-		glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), glm::value_ptr(view));
-		glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
+		shader.use();
 		glBindVertexArray(vao);
-		shaderx.use();
-		model = glm::translate(model, glm::vec3(-1.0f, 0.0f, 1.0f));
-		shaderx.set_mat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		shadery.use();
-		model = glm::mat4(1.0f);
-		model = glm::translate(model, glm::vec3(2.0f, 0.0f, 0.0f));
-		shadery.set_mat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
-
-		//성능향상을 위해 skybox를 맨 마지막에 렌더링
-		glDepthFunc(GL_LEQUAL);//skybox는 오브젝트 뒤에 그려짐
-		skybox_shader.use();
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-		view = glm::mat4(glm::mat3(glm::lookAt(camera_pos, camera_pos + camera_front, camera_up)));
-		skybox_shader.set_mat4("view", view);
-		skybox_shader.set_mat4("projection", projection);
-
-		glBindVertexArray(sao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
-		glDepthFunc(GL_LESS);
+		glDrawArrays(GL_POINTS, 0, 4);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -174,11 +112,8 @@ void openglcode::set_n_run() {
 		glfwPollEvents();
 	}
 	glDeleteVertexArrays(1, &vao);
-	glDeleteVertexArrays(1, &sao);
 	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &sbo);
-	glDeleteProgram(shaderx.id);
-	glDeleteProgram(shadery.id);
+	glDeleteProgram(shader.id);
 
 	glfwTerminate();
 
@@ -282,50 +217,13 @@ void openglcode::draw_skybox() {
 }
 
 void openglcode::draw_square() {
-	//x, y ,z
-	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
+	float points[] = {
+		-0.5f,  0.5f, //left top
+		 0.5f,  0.5f, //right top
+		-0.5f, -0.5f, //left bottom
+		 0.5f, -0.5f  //right bottom
 	};
+
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 	glGenVertexArrays(1, &vao);
 
@@ -336,19 +234,15 @@ void openglcode::draw_square() {
 
 	//Open이 사용하기 위해 vertex 리스트 복사
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
 
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glBindVertexArray(0);
 }
 
 unsigned int openglcode::load_texture(char const* path) {
@@ -412,26 +306,6 @@ void openglcode::matrices() {
 }
 
 void openglcode::process_input(GLFWwindow* window) {
-	float camera_speed = 2.5f * delta_time;
-
-	//커서 안보이게 하고 창화면에 가둠
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window, mouse_callback);
-
-	//대각선 이동이 가능하도록 하기 위해 전부 if로
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		camera_pos += camera_speed * camera_front;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		camera_pos -= camera_speed * camera_front;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
-	}
-
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		std::cout << "EXIT\n";
 		glfwSetWindowShouldClose(window, true);
