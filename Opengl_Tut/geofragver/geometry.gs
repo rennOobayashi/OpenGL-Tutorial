@@ -1,35 +1,47 @@
 #version 330 core
-layout (points) in;
-layout (triangle_strip, max_vertices = 5) out;
+layout (triangles) in;
+layout (triangle_strip, max_vertices = 3) out;
 
 in VS_OUT {
-    vec3 color;
+    vec2 tex_coords;
 } gs_in[];
 
-out vec3 fcolor;
+out vec2 tex_coords;
 
-void point_position(vec4 position);
+uniform float time;
+
+vec3 get_normal();
+vec4 explode(vec4 position, vec3 normal);
 
 void main()
 {
-    point_position(gl_in[0].gl_Position);
-}
+    vec3 normal = get_normal();
 
-void point_position(vec4 position) {
-    fcolor = vec3(1.0, 1.0, 1.0);
-    gl_Position = position + vec4(-0.2, -0.2, 0.0, 0.0); //bottom left
-    EmitVertex();
-    gl_Position = position + vec4( 0.2, -0.2, 0.0, 0.0); //bottom right
+    gl_Position = explode(gl_in[0].gl_Position, normal);
+    tex_coords = gs_in[0].tex_coords;
     EmitVertex();
     
-    //오직 하나의 입력 vertex만 존재
-    fcolor = gs_in[0].color;
-    gl_Position = position + vec4(-0.2,  0.2, 0.0, 0.0); //top left
+    gl_Position = explode(gl_in[1].gl_Position, normal);
+    tex_coords = gs_in[1].tex_coords;
     EmitVertex();
-    gl_Position = position + vec4( 0.2,  0.2, 0.0, 0.0); //top right
-    EmitVertex();
-    gl_Position = position + vec4( 0.0,  0.4, 0.0, 0.0); //top
+
+    gl_Position = explode(gl_in[2].gl_Position, normal);
+    tex_coords = gs_in[2].tex_coords;
     EmitVertex();
 
     EndPrimitive();
+}
+
+vec3 get_normal() {
+    vec3 x = vec3(gl_in[0].gl_Position) - vec3(gl_in[1].gl_Position);
+    vec3 y = vec3(gl_in[2].gl_Position) - vec3(gl_in[1].gl_Position);
+
+    return normalize(cross(x, y));
+}
+
+vec4 explode(vec4 position, vec3 normal) {
+    float magnitude = 2.0;
+    vec3 direction = normal * ((sin(time) + 1.0) / 2.0) * magnitude;
+    
+    return position + vec4(direction, 0.0);
 }

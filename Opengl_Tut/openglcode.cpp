@@ -95,7 +95,17 @@ void openglcode::set_n_run() {
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs", "geofragver/geometry.gs");
 	draw_square();
 
+	diff_tex = load_texture("texture/watashi.png");
+
+	shader.use();
+	shader.set_int("texture1", 0);
+
 	while (!glfwWindowShouldClose(window)) {
+		float current_frame = (float)glfwGetTime();
+
+		delta_time = current_frame - last_frame;
+		last_frame = current_frame;
+
 		process_input(window);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
@@ -103,8 +113,19 @@ void openglcode::set_n_run() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shader.use();
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
+		shader.set_mat4("view", view);
+		shader.set_mat4("projection", projection);
+		shader.set_float("time", glfwGetTime());
+
 		glBindVertexArray(vao);
-		glDrawArrays(GL_POINTS, 0, 4);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
+		shader.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -217,11 +238,53 @@ void openglcode::draw_skybox() {
 }
 
 void openglcode::draw_square() {
-	float points[] = {
-		-0.5f,  0.5f, 1.0f, 0.0f, 0.0f, //left top
-		 0.5f,  0.5f, 1.0f, 1.0f, 0.0f, //right top
-		-0.5f, -0.5f, 0.0f, 1.0f, 0.0f, //left bottom
-		 0.5f, -0.5f, 0.0f, 1.0f, 1.0f  //right bottom
+	float vertices[] = {
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
+	};
+	//삼각형 점 위치
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 3, 2
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
@@ -234,16 +297,19 @@ void openglcode::draw_square() {
 
 	//Open이 사용하기 위해 vertex 리스트 복사
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(points), &points, GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), &vertices, GL_STATIC_DRAW);
 
 	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
@@ -309,6 +375,26 @@ void openglcode::matrices() {
 }
 
 void openglcode::process_input(GLFWwindow* window) {
+	float camera_speed = 2.5f * delta_time;
+
+	//커서 안보이게 하고 창화면에 가둠
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetCursorPosCallback(window, mouse_callback);
+
+	//대각선 이동이 가능하도록 하기 위해 전부 if로
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+		camera_pos += camera_speed * camera_front;
+	}
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+		camera_pos -= camera_speed * camera_front;
+	}
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+	}
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+	}
+
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		std::cout << "EXIT\n";
 		glfwSetWindowShouldClose(window, true);
