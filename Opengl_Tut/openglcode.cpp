@@ -92,7 +92,8 @@ void openglcode::set_n_run() {
 
 	glEnable(GL_DEPTH_TEST);
 
-	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs", "geofragver/geometry.gs");
+	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader vshader("geofragver/visualization_vertex.vs", "geofragver/visualization_fragment.fs", "geofragver/visualization_geometry.gs");
 	draw_square();
 
 	diff_tex = load_texture("texture/watashi.png");
@@ -118,12 +119,18 @@ void openglcode::set_n_run() {
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.set_mat4("view", view);
 		shader.set_mat4("projection", projection);
-		shader.set_float("time", glfwGetTime());
 
 		glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		shader.set_mat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
+		model = glm::mat4(1.0f);
+		vshader.use();
+		vshader.set_mat4("model", model);
+		vshader.set_mat4("view", view);
+		vshader.set_mat4("projection", projection);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 
@@ -280,11 +287,6 @@ void openglcode::draw_square() {
 		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
 		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
 		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
-	};
-	//삼각형 점 위치
-	unsigned int indices[] = {
-		0, 1, 3,
-		1, 3, 2
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
