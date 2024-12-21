@@ -93,13 +93,25 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	Shader vshader("geofragver/visualization_vertex.vs", "geofragver/visualization_fragment.fs", "geofragver/visualization_geometry.gs");
-	draw_square();
+	test_instance();
 
-	diff_tex = load_texture("texture/watashi.png");
+	glm::vec2 translations[100];
+	int index = 0;
+	float offset = 0.1f;
+
+	for (int y = -10; y < 10; y += 2) {
+		for (int x = -10; x < 10; x += 2) {
+			glm::vec2 translation;
+			translation.x = (float)x / 10.0f + offset;
+			translation.y = (float)y / 10.0f + offset;
+			translations[index++] = translation;
+		}
+	}
 
 	shader.use();
-	shader.set_int("texture1", 0);
+	for (unsigned int i = 0; i < 100; i++) {
+		shader.set_vec2("offsets[" + std::to_string(i) + "]", translations[i]);
+	}
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -113,25 +125,8 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shader.use();
-		glm::mat4 model = glm::mat4(1.0f);
-		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-		shader.set_mat4("view", view);
-		shader.set_mat4("projection", projection);
-
-		glBindVertexArray(vao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		shader.set_mat4("model", model);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-
-		model = glm::mat4(1.0f);
-		vshader.use();
-		vshader.set_mat4("model", model);
-		vshader.set_mat4("view", view);
-		vshader.set_mat4("projection", projection);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(qao);
+		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
 		glBindVertexArray(0);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
@@ -139,8 +134,8 @@ void openglcode::set_n_run() {
 		//이벤트 확인
 		glfwPollEvents();
 	}
-	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &qao);
+	glDeleteBuffers(1, &qbo);
 	glDeleteProgram(shader.id);
 
 	glfwTerminate();
@@ -312,6 +307,33 @@ void openglcode::draw_square() {
 
 	glEnableVertexAttribArray(2);
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+	glBindVertexArray(0);
+}
+
+void openglcode::test_instance() {
+	float quad_vertices[] = {
+		//position       //color
+		-0.05f,  0.05f,  1.0f,  0.0f,  1.0f,
+		 0.05f, -0.05f,  1.0f,  1.0f,  0.0f,
+		-0.05f, -0.05f,  1.0f,  0.0f,  1.0f,
+
+		-0.05f,  0.05f,  0.0f,  1.0f,  0.0f,
+		 0.05f, -0.05f,  1.0f,  1.0f,  1.0f,
+		 0.05f,  0.05f,  0.0f,  1.0f,  0.0f 
+	};
+
+	glGenVertexArrays(1, &qao);
+	glGenBuffers(1, &qbo);
+	glBindVertexArray(qao);
+	glBindBuffer(GL_ARRAY_BUFFER, qbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
