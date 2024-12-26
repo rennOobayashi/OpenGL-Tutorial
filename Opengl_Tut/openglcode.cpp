@@ -93,25 +93,9 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	test_instance();
-
-	glm::vec2 translations[100];
-	int index = 0;
-	float offset = 0.1f;
-
-	for (int y = -10; y < 10; y += 2) {
-		for (int x = -10; x < 10; x += 2) {
-			glm::vec2 translation;
-			translation.x = (float)x / 10.0f + offset;
-			translation.y = (float)y / 10.0f + offset;
-			translations[index++] = translation;
-		}
-	}
 
 	shader.use();
-	for (unsigned int i = 0; i < 100; i++) {
-		shader.set_vec2("offsets[" + std::to_string(i) + "]", translations[i]);
-	}
+	test_instance();
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -323,6 +307,19 @@ void openglcode::test_instance() {
 		 0.05f,  0.05f,  0.0f,  1.0f,  0.0f 
 	};
 
+	glm::vec2 translations[100];
+	int index = 0;
+	float offset = 0.1f;
+
+	for (int y = -10; y < 10; y += 2) {
+		for (int x = -10; x < 10; x += 2) {
+			glm::vec2 translation;
+			translation.x = (float)x / 10.0f + offset;
+			translation.y = (float)y / 10.0f + offset;
+			translations[index++] = translation;
+		}
+	}
+
 	glGenVertexArrays(1, &qao);
 	glGenBuffers(1, &qbo);
 	glBindVertexArray(qao);
@@ -333,7 +330,15 @@ void openglcode::test_instance() {
 	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
+
+	glEnableVertexAttribArray(2);
+	glGenBuffers(1, &ibo);
+	glBindBuffer(GL_ARRAY_BUFFER, ibo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glVertexAttribDivisor(2, 1);
 
 	glBindVertexArray(0);
 }
