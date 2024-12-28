@@ -94,8 +94,43 @@ void openglcode::set_n_run() {
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 
+	Model planet("model/planet/planet.obj");
+	Model rock("model/rock/rock.obj");
+
 	shader.use();
-	test_instance();
+
+	float radius = 12.5f;
+	float offset = 1.25f;
+	unsigned int amount = 1000;
+	glm::mat4* model_matrices;
+	
+	model_matrices = new glm::mat4[amount];
+
+	srand((unsigned int)glfwGetTime());
+
+	for (unsigned int i = 0; i < amount; i++) {
+		glm::mat4 model = glm::mat4(1.0f);
+		float angle = (float)i / (float)amount * 360.0f;
+		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+		float scale = (float)(rand() % 20) / 100.0f + 0.05f;
+		float rot_angle = (float)(rand() % 360);
+		float x, y, z;
+
+		x = sin(angle) * radius + displacement;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+
+		y = displacement * 0.4f;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+
+		z = cos(angle) * radius + displacement;
+		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
+
+		model = glm::translate(model, glm::vec3(x, y, z));
+		model = glm::scale(model, glm::vec3(scale));
+		model = glm::rotate(model, rot_angle, glm::vec3(0.4f, 0.6f, 0.8f));
+
+		model_matrices[i] = model;
+	}
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -109,9 +144,23 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glBindVertexArray(qao);
-		glDrawArraysInstanced(GL_TRIANGLES, 0, 6, 100);
-		glBindVertexArray(0);
+		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 1000.0f);
+		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		glm::mat4 model = glm::mat4(1.0f);
+		
+		shader.use();
+		shader.set_mat4("projection", projection);
+		shader.set_mat4("view", view);
+
+		model = glm::translate(model, glm::vec3(0.0f));
+		model = glm::scale(model, glm::vec3(2.0f));
+		shader.set_mat4("model", model);
+		planet.draw(shader);
+
+		for (unsigned int i = 0; i < amount; i++) {
+			shader.set_mat4("model", model_matrices[i]);
+			rock.draw(shader);
+		}
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
