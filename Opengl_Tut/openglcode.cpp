@@ -46,27 +46,10 @@ void openglcode::set_n_run() {
 		glm::vec3(7.2f, -5.5f, 7.1f)
 	};
 
-	glm::vec3 point_lights_position[] = {
-		glm::vec3(14.0f, 0.0f, 0.0f),
-		glm::vec3(-10.0f, 0.0f, 0.0f),
-		glm::vec3(0.0f, 5.0f, 0.0f),
-		glm::vec3(0.0f, -5.0f, 0.0f),
-		glm::vec3(0.0f, 0.0f, 10.0f),
-		glm::vec3(0.0f, 0.0f, -10.0f)
-	};
-
-	std::vector<std::string> faces{
-		"texture/skybox/right.jpg",
-		"texture/skybox/left.jpg",
-		"texture/skybox/top.jpg",
-		"texture/skybox/bottom.jpg",
-		"texture/skybox/front.jpg",
-		"texture/skybox/back.jpg"
-	};
-
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 4);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -91,46 +74,15 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_MULTISAMPLE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	draw_square();
 
-	Model planet("model/planet/planet.obj");
-	Model rock("model/rock/rock.obj");
+	diff_tex = load_texture("texture/watashi.png");
 
 	shader.use();
-
-	float radius = 12.5f;
-	float offset = 1.25f;
-	unsigned int amount = 1000;
-	glm::mat4* model_matrices;
-	
-	model_matrices = new glm::mat4[amount];
-
-	srand((unsigned int)glfwGetTime());
-
-	for (unsigned int i = 0; i < amount; i++) {
-		glm::mat4 model = glm::mat4(1.0f);
-		float angle = (float)i / (float)amount * 360.0f;
-		float displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-		float scale = (float)(rand() % 20) / 100.0f + 0.05f;
-		float rot_angle = (float)(rand() % 360);
-		float x, y, z;
-
-		x = sin(angle) * radius + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-
-		y = displacement * 0.4f;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-
-		z = cos(angle) * radius + displacement;
-		displacement = (rand() % (int)(2 * offset * 100)) / 100.0f - offset;
-
-		model = glm::translate(model, glm::vec3(x, y, z));
-		model = glm::scale(model, glm::vec3(scale));
-		model = glm::rotate(model, rot_angle, glm::vec3(0.4f, 0.6f, 0.8f));
-
-		model_matrices[i] = model;
-	}
+	shader.set_int("texture1", 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -144,23 +96,18 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 1000.0f);
-		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
-		glm::mat4 model = glm::mat4(1.0f);
-		
 		shader.use();
-		shader.set_mat4("projection", projection);
+		glm::mat4 model = glm::mat4(1.0f);
+		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.set_mat4("view", view);
+		shader.set_mat4("projection", projection);
 
-		model = glm::translate(model, glm::vec3(0.0f));
-		model = glm::scale(model, glm::vec3(2.0f));
+		glBindVertexArray(vao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		shader.set_mat4("model", model);
-		planet.draw(shader);
-
-		for (unsigned int i = 0; i < amount; i++) {
-			shader.set_mat4("model", model_matrices[i]);
-			rock.draw(shader);
-		}
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -344,54 +291,6 @@ void openglcode::draw_square() {
 	glBindVertexArray(0);
 }
 
-void openglcode::test_instance() {
-	float quad_vertices[] = {
-		//position       //color
-		-0.05f,  0.05f,  1.0f,  0.0f,  1.0f,
-		 0.05f, -0.05f,  1.0f,  1.0f,  0.0f,
-		-0.05f, -0.05f,  1.0f,  0.0f,  1.0f,
-
-		-0.05f,  0.05f,  0.0f,  1.0f,  0.0f,
-		 0.05f, -0.05f,  1.0f,  1.0f,  1.0f,
-		 0.05f,  0.05f,  0.0f,  1.0f,  0.0f 
-	};
-
-	glm::vec2 translations[100];
-	int index = 0;
-	float offset = 0.1f;
-
-	for (int y = -10; y < 10; y += 2) {
-		for (int x = -10; x < 10; x += 2) {
-			glm::vec2 translation;
-			translation.x = (float)x / 10.0f + offset;
-			translation.y = (float)y / 10.0f + offset;
-			translations[index++] = translation;
-		}
-	}
-
-	glGenVertexArrays(1, &qao);
-	glGenBuffers(1, &qbo);
-	glBindVertexArray(qao);
-	glBindBuffer(GL_ARRAY_BUFFER, qbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
-
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(2 * sizeof(float)));
-
-	glEnableVertexAttribArray(2);
-	glGenBuffers(1, &ibo);
-	glBindBuffer(GL_ARRAY_BUFFER, ibo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec2) * 100, &translations[0], GL_STATIC_DRAW);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), (void*)0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glVertexAttribDivisor(2, 1);
-
-	glBindVertexArray(0);
-}
-
 unsigned int openglcode::load_texture(char const* path) {
 	unsigned int texture;
 	int width, height, color_ch;
@@ -436,20 +335,6 @@ unsigned int openglcode::load_texture(char const* path) {
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
-}
-
-void openglcode::matrices() {
-	glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-
-	glGenBuffers(1, &ubo);
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferData(GL_UNIFORM_BUFFER, 2 * sizeof(glm::mat4) , NULL, GL_STATIC_DRAW);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-	glBindBufferBase(GL_UNIFORM_BUFFER, 0, ubo);
-
-	glBindBuffer(GL_UNIFORM_BUFFER, ubo);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), glm::value_ptr(projection));
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
 void openglcode::process_input(GLFWwindow* window) {

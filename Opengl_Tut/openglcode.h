@@ -39,8 +39,6 @@ private:
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_skybox();
-	void matrices();
-	void test_instance();
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
 public:
