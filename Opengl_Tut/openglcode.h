@@ -24,7 +24,7 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vbo, vao, sao, sbo, ubo, qao, qbo, ibo;
+	unsigned int vao, vbo, qao, qbo, sao, sbo, framebuffer, texcolorbuffer_multisampled, rbo, fbo, scr_tex;
 	unsigned int tex_color_buffer;
 	char info_log[512];
 	unsigned int texture1, texture2;
@@ -39,6 +39,7 @@ private:
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_skybox();
+	void multi_sample();
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
 public:

@@ -49,7 +49,6 @@ void openglcode::set_n_run() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-	glfwWindowHint(GLFW_SAMPLES, 4);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -74,15 +73,17 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_MULTISAMPLE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader scr_shader("geofragver/screen_vertex.vs", "geofragver/screen_fragment.fs");
 	draw_square();
 
 	diff_tex = load_texture("texture/watashi.png");
 
-	shader.use();
-	shader.set_int("texture1", 0);
+	multi_sample();
+	
+	scr_shader.use();
+	scr_shader.set_int("screen_texture1", 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -96,27 +97,50 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glEnable(GL_DEPTH_TEST);
+
 		shader.use();
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.set_mat4("view", view);
 		shader.set_mat4("projection", projection);
+		shader.set_mat4("model", model);
 
 		glBindVertexArray(vao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		shader.set_mat4("model", model);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
+		
+		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
+		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
+		glBlitFramebuffer(0, 0, X, Y, 0, 0, X, Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+		glClear(GL_COLOR_BUFFER_BIT);
+		glDisable(GL_DEPTH_TEST);
+
+		scr_shader.use();
+		glBindVertexArray(qao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, scr_tex);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
 		//이벤트 확인
 		glfwPollEvents();
 	}
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
 	glDeleteVertexArrays(1, &qao);
 	glDeleteBuffers(1, &qbo);
 	glDeleteProgram(shader.id);
+	glDeleteProgram(scr_shader.id);
 
 	glfwTerminate();
 
@@ -126,13 +150,13 @@ void openglcode::set_n_run() {
 unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
 	unsigned int texture_id;
 	int width, height, color_ch;
+	GLenum format = GL_RGB;
 
 	glGenTextures(1, &texture_id);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, texture_id);
 
 	for (unsigned int i = 0; i < faces.size(); i++) {
 		unsigned char* data = stbi_load(faces[i].c_str(), &width, &height, &color_ch, 0);
-		GLenum format = GL_RGB;
 
 		if (data) {
 			if (color_ch == 1) {
@@ -264,6 +288,16 @@ void openglcode::draw_square() {
 		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
 	};
 
+	float quad_vertices[] = {
+		-1.0f,  1.0f,  0.0f,  1.0f,
+		-1.0f, -1.0f,  0.0f,  0.0f,
+		 1.0f, -1.0f,  1.0f,  0.0f,
+
+		-1.0f,  1.0f,  0.0f,  1.0f,
+		 1.0f, -1.0f,  1.0f,  0.0f,
+		 1.0f,  1.0f,  1.0f,  1.0f
+	};
+
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
 	glGenVertexArrays(1, &vao);
 
@@ -282,11 +316,24 @@ void openglcode::draw_square() {
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 
-	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glBindVertexArray(0);
 
-	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+
+	glGenVertexArrays(1, &qao);
+
+	glGenBuffers(1, &qbo);
+	glBindVertexArray(qao);
+
+	glBindBuffer(GL_ARRAY_BUFFER, qbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+
+	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
+	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
+	//위치 attribute
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
@@ -331,6 +378,46 @@ unsigned int openglcode::load_texture(char const* path) {
 	stbi_image_free(data);
 
 	return texture;
+}
+
+void openglcode::multi_sample() {
+	glGenFramebuffers(1, &framebuffer);
+	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+
+	glGenTextures(1, &texcolorbuffer_multisampled);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texcolorbuffer_multisampled);
+	glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGBA, X, Y, GL_TRUE);
+	glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, texcolorbuffer_multisampled, 0);
+
+	glGenRenderbuffers(1, &rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
+	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, X, Y);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "ERROR::FRAMEBUFFER::Framebuffer is not complete!\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenFramebuffers(1, &fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	
+	glGenTextures(1, &scr_tex);
+	glBindTexture(GL_TEXTURE_2D, scr_tex);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, X, Y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, scr_tex, 0);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "ERROR::FRAMEBUFFER::Intermediate framebuffer is not complete!\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
