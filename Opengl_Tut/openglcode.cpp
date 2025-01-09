@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(0.0f, 5.0f, -0.0f);
+	light_pos = glm::vec3(0.0f, 5.0f, 0.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
@@ -75,15 +75,12 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	Shader scr_shader("geofragver/screen_vertex.vs", "geofragver/screen_fragment.fs");
 	draw_square();
 
 	diff_tex = load_texture("texture/watashi.png");
 
-	multi_sample();
-	
-	scr_shader.use();
-	scr_shader.set_int("screen_texture1", 0);
+	shader.use();
+	shader.set_int("texture1", 0);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -97,38 +94,23 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glEnable(GL_DEPTH_TEST);
-
 		shader.use();
 		glm::mat4 model = glm::mat4(1.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.set_mat4("view", view);
 		shader.set_mat4("projection", projection);
-		shader.set_mat4("model", model);
+
+		shader.set_vec3("view_pos", camera_pos);
+		shader.set_vec3("light_pos", light_pos);
+		shader.set_int("clickb", clickb);
+
+		glBindVertexArray(vao);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
 
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
-		
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, framebuffer);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
-		glBlitFramebuffer(0, 0, X, Y, 0, 0, X, Y, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
-		glDisable(GL_DEPTH_TEST);
-
-		scr_shader.use();
-		glBindVertexArray(qao);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, scr_tex);
-		glDrawArrays(GL_TRIANGLES, 0, 6);
-		
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -137,10 +119,7 @@ void openglcode::set_n_run() {
 	}
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
-	glDeleteVertexArrays(1, &qao);
-	glDeleteBuffers(1, &qbo);
 	glDeleteProgram(shader.id);
-	glDeleteProgram(scr_shader.id);
 
 	glfwTerminate();
 
@@ -245,47 +224,47 @@ void openglcode::draw_skybox() {
 
 void openglcode::draw_square() {
 	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
 
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f, -0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f, -0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f,
-		 0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 1.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		 0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  1.0f, 0.0f,
-		-0.5f,  0.5f,  0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 0.0f,
-		-0.5f,  0.5f, -0.5f,  0.6f,  0.0f,  0.6f,  0.0f, 1.0f
+		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	};
 
 	float quad_vertices[] = {
@@ -315,25 +294,10 @@ void openglcode::draw_square() {
 	//위치 attribute
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-
-	glBindVertexArray(0);
-
-
-	glGenVertexArrays(1, &qao);
-
-	glGenBuffers(1, &qbo);
-	glBindVertexArray(qao);
-
-	glBindBuffer(GL_ARRAY_BUFFER, qbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
-
-	//OpenGL에게 vertex 데이터를 어떻게 해석하는지 알려줌
-	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
-	//위치 attribute
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
 	glBindVertexArray(0);
 }
@@ -379,7 +343,7 @@ unsigned int openglcode::load_texture(char const* path) {
 
 	return texture;
 }
-
+/*
 void openglcode::multi_sample() {
 	glGenFramebuffers(1, &framebuffer);
 	glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
@@ -419,7 +383,7 @@ void openglcode::multi_sample() {
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
-
+*/
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 }
@@ -443,6 +407,13 @@ void openglcode::process_input(GLFWwindow* window) {
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+	}
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !ispressb) {
+		clickb = !clickb;
+		ispressb = true;
+	}
+	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
+		ispressb = false;
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {

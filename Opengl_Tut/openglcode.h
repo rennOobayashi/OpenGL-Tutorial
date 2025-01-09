@@ -24,8 +24,7 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vao, vbo, qao, qbo, sao, sbo, framebuffer, texcolorbuffer_multisampled, rbo, fbo, scr_tex;
-	unsigned int tex_color_buffer;
+	unsigned int vao, vbo, sao, sbo;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, spec_tex;
@@ -35,6 +34,7 @@ private:
 	float delta_time;
 	float last_frame;
 	float outline_scale;
+	bool clickb, ispressb = false;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
