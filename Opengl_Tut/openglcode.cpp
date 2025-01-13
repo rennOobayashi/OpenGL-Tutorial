@@ -103,7 +103,7 @@ void openglcode::set_n_run() {
 
 		shader.set_vec3("view_pos", camera_pos);
 		shader.set_vec3("light_pos", light_pos);
-		shader.set_int("clickb", clickb);
+		shader.set_vec3("light_color", glm::vec3(0.5f));
 
 		glBindVertexArray(vao);
 		glActiveTexture(GL_TEXTURE0);
@@ -407,14 +407,7 @@ void openglcode::process_input(GLFWwindow* window) {
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
 		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS && !ispressb) {
-		clickb = !clickb;
-		ispressb = true;
-	}
-	if (glfwGetKey(window, GLFW_KEY_B) == GLFW_RELEASE) {
-		ispressb = false;
-	}
+	}						
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
 		std::cout << "EXIT\n";

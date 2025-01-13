@@ -34,7 +34,6 @@ private:
 	float delta_time;
 	float last_frame;
 	float outline_scale;
-	bool clickb, ispressb = false;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
