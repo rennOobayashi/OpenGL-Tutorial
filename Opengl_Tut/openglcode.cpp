@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(0.0f, 5.0f, 0.0f);
+	light_pos = glm::vec3(0.0f, 1.0f, 0.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
@@ -77,7 +77,7 @@ void openglcode::set_n_run() {
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	draw_square();
 
-	diff_tex = load_texture("texture/watashi.png");
+	diff_tex = load_texture("texture/floor.png");
 
 	shader.use();
 	shader.set_int("texture1", 0);
@@ -224,47 +224,47 @@ void openglcode::draw_skybox() {
 
 void openglcode::draw_square() {
 	float vertices[] = {
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 
-		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
 
-		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
 
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
 
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-10.0f, -0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-10.0f, -0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-5.0f, -0.6f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-5.0f, -0.6f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
 
-		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-10.0f,  0.5f,  10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-10.0f,  0.5f, -10.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+		-5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
+		 5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		 5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
+		-5.0f,  0.4f,  5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
+		-5.0f,  0.4f, -5.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
 	};
 
 	float quad_vertices[] = {
@@ -305,7 +305,7 @@ void openglcode::draw_square() {
 unsigned int openglcode::load_texture(char const* path) {
 	unsigned int texture;
 	int width, height, color_ch;
-	GLenum format = GL_RGB;
+	GLenum format = GL_SRGB;
 
 	glGenTextures(1, &texture);
 	data = stbi_load(path, &width, &height, &color_ch, 0);
@@ -316,14 +316,14 @@ unsigned int openglcode::load_texture(char const* path) {
 			format = GL_RED;
 		}
 		else if (color_ch == 3) {
-			format = GL_RGB;
+			format = GL_SRGB;
 		}
 		else if (color_ch == 4) {
-			format = GL_RGBA;
+			format = GL_SRGB_ALPHA;
 		}
 
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);

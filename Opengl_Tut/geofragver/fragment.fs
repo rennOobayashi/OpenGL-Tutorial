@@ -27,6 +27,7 @@ void main()
     float spec = 0.0;
     vec3 view_dir = normalize(view_pos -fs_in.frag_pos);
     vec3 reflect_dir = reflect(-light_dir, normal);
+    float gamma = 2.2;
 
     //bilnn phong
     if (clickb) {
@@ -41,4 +42,5 @@ void main()
     specular = vec3(0.3) * spec;
 
     frag_color = vec4(ambient + diffuse + specular, 1.0);
+    frag_color.rgb = pow(frag_color.rgb, vec3(1.0/gamma));
 }
