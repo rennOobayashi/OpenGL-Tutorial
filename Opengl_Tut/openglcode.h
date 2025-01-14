@@ -16,7 +16,7 @@
 class openglcode
 {
 private:
-
+	const unsigned int shadow_x = 512, shadow_y = 512;
 	GLFWwindow* window;
 	glm::vec3 camera_pos;
 	glm::vec3 camera_up;
@@ -24,7 +24,7 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vao, vbo, sao, sbo;
+	unsigned int vao, vbo, sao, sbo, fbo, depth_map, qao, qbo;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, spec_tex;
@@ -38,7 +38,8 @@ private:
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_skybox();
-	void multi_sample();
+	void framebuffer();
+	void render_scene(const Shader &shader);
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
 public:
