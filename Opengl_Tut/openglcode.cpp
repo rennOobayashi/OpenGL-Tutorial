@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(-2.0f, 4.0f, -1.0f);
+	light_pos = glm::vec3(-3.0f, 2.0f, -2.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
@@ -73,6 +73,7 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
+
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader simple_depth_shader("geofragver/shadow_vertex.vs", "geofragver/shadow_fragment.fs");
@@ -134,13 +135,12 @@ void openglcode::set_n_run() {
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, depth_map);
 		render_scene(shader);
-
+		
 		debug_depth_shader.use();
 		debug_depth_shader.set_float("near_cube", near_cube);
 		debug_depth_shader.set_float("far_cube", far_cube);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, depth_map);
-
 
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
@@ -255,47 +255,48 @@ void openglcode::draw_skybox() {
 
 void openglcode::draw_square() {
 	float vertices[] = {
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-
-		-1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-
-		-1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		-1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-1.0f, -0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-1.0f, -0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-
-		-1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f,
-		 1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 1.0f,
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		 1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  1.0f, 0.0f,
-		-1.0f,  0.5f,  1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 0.0f,
-		-1.0f,  0.5f, -1.0f,  0.0f,  1.0f,  0.0f,  0.0f, 1.0f
+			//back
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
+             1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,        
+             1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
+            -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
+            //front
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+             1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
+             1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
+            -1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+            //left
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+            -1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+            //right
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+             1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,         
+             1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+             1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+             1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,    
+            //bottom
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+             1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+             1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
+            -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+            //top
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
+             1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+             1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,  
+             1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+            -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
+            -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f       
 	};
 	
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
@@ -326,7 +327,7 @@ void openglcode::draw_square() {
 			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
 			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
 			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
-			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f
 	};
 
 	glGenVertexArrays(1, &qao);
@@ -425,14 +426,17 @@ void openglcode::multi_sample() {
 */
 
 void openglcode::framebuffer() {
+	float border_color[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 	glGenFramebuffers(1, &fbo);
 	glGenTextures(1, &depth_map);
 	glBindTexture(GL_TEXTURE_2D, depth_map);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, shadow_x, shadow_y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border_color);																				
 
 	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depth_map, 0);
@@ -461,14 +465,21 @@ void openglcode::render_scene(const Shader &shader) {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
-	/*
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0.0f, -11.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(10.0f));
+	shader.set_mat4("model", model);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, light_pos);
 	model = glm::scale(model, glm::vec3(0.1f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);*/
+	glBindVertexArray(0);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {

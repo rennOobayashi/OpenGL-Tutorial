@@ -16,7 +16,7 @@
 class openglcode
 {
 private:
-	const unsigned int shadow_x = 512, shadow_y = 512;
+	const unsigned int shadow_x = 1024, shadow_y = 1024;
 	GLFWwindow* window;
 	glm::vec3 camera_pos;
 	glm::vec3 camera_up;

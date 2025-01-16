@@ -12,7 +12,7 @@ float linearize_depth(float depth);
 void main()
 {
     float depth_value = texture(depth_map, texcoords).r;
-    frag_color = vec4(vec3(depth_value), 1.0); // orthographic
+    frag_color = vec4(vec3(linearize_depth(depth_value) / far_cube), 1.0); // orthographic
 }
 
 float linearize_depth(float depth) {
