@@ -17,7 +17,7 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(-3.0f, 2.0f, -2.0f);
+	light_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
@@ -73,23 +73,24 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
-
+	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	Shader simple_depth_shader("geofragver/shadow_vertex.vs", "geofragver/shadow_fragment.fs");
-	Shader debug_depth_shader("geofragver/shadow_vertex_quad.vs", "geofragver/shadow_fragment_quad.fs");
+	Shader simple_depth_shader("geofragver/shadow_vertex_quad.vs", "geofragver/shadow_fragment_quad.fs", "geofragver/geometry.gs");
 	draw_square();
 
 	diff_tex = load_texture("texture/floor.png");
 
-	framebuffer();
+	depth_cubemap();
 
 	shader.use();
 	shader.set_int("diffuse_texture", 0);
-	shader.set_int("shadow_map", 1);
+	shader.set_int("depth_map", 1);
 
-	debug_depth_shader.use();
-	debug_depth_shader.set_int("depth_map", 0);
+	float aspect = (float)shadow_x / (float)shadow_y;
+	float near = 1.0f;
+	float far = 25.0f;
+	glm::mat4 shadow_proj = glm::perspective(glm::radians(90.0f), aspect, near, far);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -97,27 +98,40 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
+		light_pos.z = (float)(sin(glfwGetTime() * 0.5) * 3.0f);
+
 		process_input(window);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		float near_cube = 1.0f, far_cube = 7.5f;
-		glm::mat4 light_projection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_cube, far_cube);
-		glm::mat4 light_view = glm::lookAt(light_pos, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 light_space_matrix = light_projection * light_view;
+		std::vector<glm::mat4> shadow_transform;
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3( 1.0f,  0.0f,  0.0), glm::vec3( 0.0f, -1.0f,  0.0f)));
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3(-1.0f,  0.0f,  0.0), glm::vec3( 0.0f, -1.0f,  0.0f)));
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3( 0.0f,  1.0f,  0.0), glm::vec3( 0.0f,  0.0f,  1.0f)));
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3( 0.0f, -1.0f,  0.0), glm::vec3( 0.0f,  0.0f, -1.0f)));
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3( 0.0f,  0.0f,  1.0), glm::vec3( 0.0f, -1.0f,  0.0f)));
+		shadow_transform.push_back(shadow_proj * glm::lookAt(light_pos, light_pos + glm::vec3( 0.0f,  0.0f, -1.0), glm::vec3( 0.0f, -1.0f,  0.0f)));
 
-		simple_depth_shader.use();
-		simple_depth_shader.set_mat4("light_space_matrix", light_space_matrix);
 
 		glViewport(0, 0, shadow_x, shadow_y);
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
 		glClear(GL_DEPTH_BUFFER_BIT);
+		simple_depth_shader.use();
+
+		for (unsigned int i = 0; i < shadow_transform.size(); i++) {
+			simple_depth_shader.set_mat4("shadow_matrices[" + std::to_string(i) + "]", shadow_transform[i]);
+		}
+
+		simple_depth_shader.set_float("far_cube", far);
+		simple_depth_shader.set_vec3("light_pos", light_pos);
+
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		render_scene(simple_depth_shader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
 
 		glViewport(0, 0, X, Y);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -129,19 +143,13 @@ void openglcode::set_n_run() {
 		shader.set_mat4("view", view);
 		shader.set_vec3("view_pos", camera_pos);
 		shader.set_vec3("light_pos", light_pos);
-		shader.set_mat4("light_space_matrix", light_space_matrix);
+		shader.set_float("far_cube", far);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, depth_map);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map);
 		render_scene(shader);
 		
-		debug_depth_shader.use();
-		debug_depth_shader.set_float("near_cube", near_cube);
-		debug_depth_shader.set_float("far_cube", far_cube);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, depth_map);
-
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -323,6 +331,7 @@ void openglcode::draw_square() {
 
 	glBindVertexArray(0);
 
+
 	float quad_vertices[] = {
 			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
 			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
@@ -450,15 +459,39 @@ void openglcode::framebuffer() {
 	}
 }
 
+void openglcode::depth_cubemap() {
+	glGenFramebuffers(1, &fbo);
+	glGenTextures(1, &depth_cube_map);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT,
+					shadow_x, shadow_y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+	glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depth_cube_map, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void openglcode::render_scene(const Shader &shader) {
 	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(4.0f, 0.0f, 4.0f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(1.0f, -1.0f, 1.0f));
+	model = glm::translate(model, glm::vec3(-3.0f, -0.5f, -3.0f));
 	model = glm::scale(model, glm::vec3(0.5f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
