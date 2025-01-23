@@ -524,6 +524,10 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 void openglcode::process_input(GLFWwindow* window) {
 	float camera_speed = 2.5f * delta_time;
 
+	if (camera_pos.y > 1.0f || camera_pos.y < 1.0f) {
+		camera_pos.y = 1;
+	}
+
 	//커서 안보이게 하고 창화면에 가둠
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
