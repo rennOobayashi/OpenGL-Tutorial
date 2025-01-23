@@ -484,15 +484,16 @@ void openglcode::depth_cubemap() {
 
 void openglcode::render_scene(const Shader &shader) {
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(4.0f, 0.0f, 4.0f));
+	model = glm::translate(model, glm::vec3(2.0f, -0.5f, 2.0f));
+	model = glm::scale(model, glm::vec3(0.5f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(-3.0f, -0.5f, -3.0f));
-	model = glm::scale(model, glm::vec3(0.5f));
+	model = glm::translate(model, glm::vec3(-1.0f, -0.75f, -1.0f));
+	model = glm::scale(model, glm::vec3(0.25f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -506,13 +507,14 @@ void openglcode::render_scene(const Shader &shader) {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
+	/*
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, light_pos);
 	model = glm::scale(model, glm::vec3(0.1f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
+	glBindVertexArray(0);*/
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {

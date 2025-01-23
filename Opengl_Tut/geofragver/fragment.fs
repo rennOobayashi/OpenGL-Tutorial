@@ -17,6 +17,15 @@ uniform float far_cube;
 
 float shadow_calculation(vec3 frag_pos);
 
+vec3 sample_offset_directions[20] = vec3[]
+(
+    vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
+    vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
+    vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
+    vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
+    vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
+);
+
 void main()
 {
     vec3 color = texture(diffuse_texture, fs_in.texcoords).rgb;
@@ -43,14 +52,24 @@ void main()
 
 float shadow_calculation(vec3 frag_pos) {
     vec3 frag_to_light = frag_pos - light_pos;
-    float closeset_depth = texture(depth_map, frag_to_light).r;
     float current_depth = length(frag_to_light);
     float bias = 0.05;
     float shadow = 0;
+    float view_distance = length(view_pos - frag_pos);
+    //shadow LoD
+    float disk_radius = (1.0 + (view_distance / far_cube)) / 25.0;
+    int sample = 20;
 
-    closeset_depth *= far_cube;
+    for (int i = 0; i < sample; i++) {
+        float closeset_depth = texture(depth_map, frag_to_light + sample_offset_directions[i] * disk_radius).r;
+        closeset_depth *= far_cube;
 
-    shadow = current_depth - bias > closeset_depth ? 1.0 : 0.0;
+        if (current_depth - bias > closeset_depth) {
+            shadow +=  1.0;
+        }
+    }
+
+    shadow /= float(sample);
 
     return shadow;
 }
