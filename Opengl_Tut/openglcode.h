@@ -27,13 +27,14 @@ private:
 	unsigned int vao, vbo, sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map;
 	char info_log[512];
 	unsigned int texture1, texture2;
-	unsigned int diff_tex, spec_tex;
+	unsigned int diff_tex, nor_tex, disp_tex;
 	unsigned int cubemap_texture;
 	unsigned char* data;
 	float camera_speed;
 	float delta_time;
 	float last_frame;
 	float outline_scale;
+	float height_scale;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
