@@ -49,6 +49,21 @@ void main()
 }
 
 vec2 parallax_mapping(vec2 texcoords, vec3 view_dir) {
-    float height = texture(depth_map, texcoords).r;
-    return texcoords - view_dir.xy * (height * height_scale);
+    const float min_layers = 8.0, max_layers = 32.0;
+    float num_layers = mix(max_layers, min_layers, max(dot(vec3(0.0, 0.0, 1.0), view_dir), 0.0));
+    float layer_depth = 1.0 / num_layers;
+    float current_layer_depth = 0.0;
+    vec2 p = view_dir.xy * height_scale;
+    vec2 delta_texcoords = p / num_layers;
+    
+    vec2 current_texcoords = texcoords;
+    float current_depth_map_value = texture(depth_map, current_texcoords).r;
+
+    while (current_layer_depth < current_depth_map_value) {
+        current_texcoords -= delta_texcoords;
+        current_depth_map_value = texture(depth_map, current_texcoords).r;
+        current_layer_depth += layer_depth;
+    }
+
+    return current_texcoords;
 }
