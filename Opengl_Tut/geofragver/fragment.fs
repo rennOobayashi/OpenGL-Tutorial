@@ -1,4 +1,3 @@
-
 #version 330 core
 out vec4 frag_color;
 
@@ -14,9 +13,10 @@ uniform sampler2D diffuse_texture;
 uniform sampler2D normal_map_texture;
 uniform sampler2D depth_map;
 
+uniform float height_scale;
+
 vec2 parallax_mapping(vec2 texcoords, vec3 view_dir);
 
-float height_scale;
 
 void main()
 {
@@ -65,5 +65,12 @@ vec2 parallax_mapping(vec2 texcoords, vec3 view_dir) {
         current_layer_depth += layer_depth;
     }
 
-    return current_texcoords;
+    vec2 pre_texcoords = current_texcoords + delta_texcoords;
+    float after_depth = current_depth_map_value - current_layer_depth;
+    float before_depth = texture(depth_map, pre_texcoords).r - current_layer_depth + layer_depth;
+
+    float weight = after_depth / (after_depth - before_depth);
+    vec2 final_texcoords = pre_texcoords * weight + current_texcoords * (1.0 - weight);
+
+    return final_texcoords;
 }
