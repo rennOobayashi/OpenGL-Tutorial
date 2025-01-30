@@ -17,15 +17,12 @@ void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
 	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
 	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
-	light_pos = glm::vec3(0.0f, 0.0f, 3.0f);
+	light_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
 	delta_time = 0.0f;
 	last_frame = 0.0f;
-
-	outline_scale = 1.07f;
-
-	height_scale = 0.1;
+	exposure = 2.0;
 
 	glfwInit();
 }
@@ -75,21 +72,30 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader hdr_shader("geofragver/hdr_vertex.vs", "geofragver/hdr_fragment.fs");
 	draw_square();
 
-	diff_tex = load_texture("texture/bricks.jpg");
-	nor_tex = load_texture("texture/bricks_normal.jpg");
-	disp_tex = load_texture("texture/bricks_disp.jpg");
+	diff_tex = load_texture("texture/floor.png");
 
-	depth_cubemap();
+	hdrbuffer();
 
 	shader.use();
 	shader.set_int("diffuse_texture", 0);
-	shader.set_int("normal_map_texture", 1);
-	shader.set_int("depth_map", 2);
+	hdr_shader.set_int("hdr_buffer", 0);
+
+	std::vector<glm::vec3> light_positions;
+	light_positions.push_back(glm::vec3( 0.0f,  0.0f,  -20.0f));
+	light_positions.push_back(glm::vec3(-1.4f, -1.9f,  -6.0f));
+	light_positions.push_back(glm::vec3( 0.0f, -1.8f,  -2.0f));
+	light_positions.push_back(glm::vec3( 1.0f, -1.7f,  -8.0f));
+
+	std::vector<glm::vec3> light_colors;
+	light_colors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
+	light_colors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
+	light_colors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
+	light_colors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -97,13 +103,13 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
-		light_pos.x = (float)(sin(glfwGetTime() * 1) * 0.5f);
-		light_pos.y = (float)(sin(glfwGetTime() * 1) * 0.5f);
-		light_pos.z = (float)(sin(glfwGetTime() * 0.5) * 1.0f);
+		//light_pos.z = (float)(sin(glfwGetTime() * 0.5) * 3.0f);
 
 		process_input(window);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -112,17 +118,27 @@ void openglcode::set_n_run() {
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
-		shader.set_vec3("view_pos", camera_pos);
-		shader.set_vec3("light_pos", light_pos);
-		shader.set_float("height_scale", height_scale);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, nor_tex);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, disp_tex);
-		render_scene(shader);
 
+		for (unsigned int i = 0; i < light_positions.size(); i++) {
+			shader.set_vec3("lights[" + std::to_string(i) + "].pos", light_positions[i]);
+			shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
+		}
+		
+		shader.set_vec3("view_pos", camera_pos);
+		render_scene(shader);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		hdr_shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, color_buffer);
+		hdr_shader.set_float("exposure", exposure);
+
+		glBindVertexArray(qao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
 
 		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
 		glfwSwapBuffers(window);
@@ -235,64 +251,49 @@ void openglcode::draw_skybox() {
 }
 
 void openglcode::draw_square() {
-	glm::vec3 pos[] = {
-		glm::vec3(-1.0f,  1.0f,  0.0f),
-		glm::vec3(-1.0f, -1.0f,  0.0f),
-		glm::vec3(1.0f, -1.0f,  0.0f),
-		glm::vec3(1.0f,  1.0f,  0.0f)
-	};
-	glm::vec2 uv[] = {
-		glm::vec2(0.0f, 1.0f),
-		glm::vec2(0.0f, 0.0f),
-		glm::vec2(1.0f, 0.0f),
-		glm::vec2(1.0f, 1.0f),
-	};
-
-	glm::vec3 normal(0.0f, 0.0f, 1.0f);
-	glm::vec3 tangent1, tangent2, bitangent1, bitangent2;
-
-	glm::vec3 edge1 = pos[1] - pos[0];
-	glm::vec3 edge2 = pos[2] - pos[0];
-	glm::vec2 delta_uv1 = uv[1] - uv[0];
-	glm::vec2 delta_uv2 = uv[2] - uv[0];
-
-	float f = 1.0f / (delta_uv1.x * delta_uv2.y - delta_uv2.x * delta_uv1.y);
-
-	tangent1.x = f * (delta_uv2.y * edge1.x - delta_uv1.y * edge2.x);
-	tangent1.y = f * (delta_uv2.y * edge1.y - delta_uv1.y * edge2.y);
-	tangent1.z = f * (delta_uv2.y * edge1.z - delta_uv1.y * edge2.z);
-	tangent1 = glm::normalize(tangent1);
-
-	bitangent1.x = f * (-delta_uv2.x * edge1.x + delta_uv1.x * edge2.x);
-	bitangent1.y = f * (-delta_uv2.x * edge1.y + delta_uv1.x * edge2.y);
-	bitangent1.z = f * (-delta_uv2.x * edge1.z + delta_uv1.x * edge2.z);
-	bitangent1 = glm::normalize(bitangent1);
-
-	edge1 = pos[2] - pos[0];
-	edge2 = pos[3] - pos[0];
-	delta_uv1 = uv[2] - uv[0];
-	delta_uv2 = uv[3] - uv[0];
-
-	f = 1.0f / (delta_uv1.x * delta_uv2.y - delta_uv2.x * delta_uv1.y);
-
-	tangent2.x = f * (delta_uv2.y * edge1.x - delta_uv1.y * edge2.x);
-	tangent2.y = f * (delta_uv2.y * edge1.y - delta_uv1.y * edge2.y);
-	tangent2.z = f * (delta_uv2.y * edge1.z - delta_uv1.y * edge2.z);
-	tangent2 = glm::normalize(tangent2);
-
-	bitangent2.x = f * (-delta_uv2.x * edge1.x + delta_uv1.x * edge2.x);
-	bitangent2.y = f * (-delta_uv2.x * edge1.y + delta_uv1.x * edge2.y);
-	bitangent2.z = f * (-delta_uv2.x * edge1.z + delta_uv1.x * edge2.z);
-	bitangent2 = glm::normalize(bitangent2);
-
 	float vertices[] = {
-		//position					  normal						texcoords		  tangnet							  bitangent
-		pos[0].x, pos[0].y, pos[0].z, normal.x, normal.y, normal.z, uv[0].x, uv[0].y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z, //back
-		pos[1].x, pos[1].y, pos[1].z, normal.x, normal.y, normal.z, uv[1].x, uv[1].y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z, //front
-		pos[2].x, pos[1].y, pos[1].z, normal.x, normal.y, normal.z, uv[2].x, uv[2].y, tangent1.x, tangent1.y, tangent1.z, bitangent1.x, bitangent1.y, bitangent1.z, //left
-		pos[0].x, pos[0].y, pos[0].z, normal.x, normal.y, normal.z, uv[0].x, uv[0].y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z, //right
-		pos[2].x, pos[2].y, pos[2].z, normal.x, normal.y, normal.z, uv[2].x, uv[2].y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z, //bottom
-		pos[3].x, pos[3].y, pos[3].z, normal.x, normal.y, normal.z, uv[3].x, uv[3].y, tangent2.x, tangent2.y, tangent2.z, bitangent2.x, bitangent2.y, bitangent2.z, //top
+		//back
+		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
+		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
+		 1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 0.0f,
+		 1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 0.0f,
+		-1.0f,  1.0f, -1.0f,  0.0f,  0.0f, -1.0f, 0.0f, 1.0f,
+		//front
+		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 0.0f,
+		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
+		 1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 1.0f, 1.0f,
+		-1.0f,  1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f,  1.0f,  0.0f,  0.0f,  1.0f, 0.0f, 0.0f,
+		//left
+		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		-1.0f,  1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f, -1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+		-1.0f, -1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+		-1.0f,  1.0f,  1.0f, -1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		//right
+		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+		 1.0f,  1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 1.0f,
+		 1.0f, -1.0f, -1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 1.0f,
+		 1.0f,  1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 1.0f, 0.0f,
+		 1.0f, -1.0f,  1.0f,  1.0f,  0.0f,  0.0f, 0.0f, 0.0f,
+		 //bottom
+		 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+		  1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 1.0f,
+		  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+		  1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 1.0f, 0.0f,
+		 -1.0f, -1.0f,  1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 0.0f,
+		 -1.0f, -1.0f, -1.0f,  0.0f, -1.0f,  0.0f, 0.0f, 1.0f,
+		 //top
+		 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
+		  1.0f,  1.0f , 1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+		  1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 1.0f,
+		  1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 1.0f, 0.0f,
+		 -1.0f,  1.0f, -1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 1.0f,
+		 -1.0f,  1.0f,  1.0f,  0.0f,  1.0f,  0.0f, 0.0f, 0.0f
 	};
 
 	//버퍼 ID 생성, vertex buffer object의 버퍼 유형은 GL_ARRAY_BUFFER
@@ -311,16 +312,31 @@ void openglcode::draw_square() {
 	//vertex 속성, vertex 속성 크기, 데이터 타입, 데이터 정규화 여부, stride(vertex 속성 세트들 사이간 공백), void*타입이므로 형변환하고 위치 데이터가 배열 시작 부분에 있으므로 0
 	//위치 attribute
 	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(1);
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(3);
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(8 * sizeof(float)));
-	glEnableVertexAttribArray(4);
-	glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, 14 * sizeof(float), (void*)(11 * sizeof(float)));
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 
+	glBindVertexArray(0);
+
+
+	float quad_vertices[] = {
+			-1.0f,  1.0f, 0.0f, 0.0f, 1.0f,
+			-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,
+			 1.0f,  1.0f, 0.0f, 1.0f, 1.0f,
+			 1.0f, -1.0f, 0.0f, 1.0f, 0.0f
+	};
+
+	glGenVertexArrays(1, &qao);
+	glGenBuffers(1, &qbo);
+	glBindVertexArray(qao);
+	glBindBuffer(GL_ARRAY_BUFFER, qbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertices), &quad_vertices, GL_STATIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindVertexArray(0);
 }
 
@@ -455,25 +471,63 @@ void openglcode::depth_cubemap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void openglcode::hdrbuffer() {
+	glGenFramebuffers(1, &hdr_fbo);
+
+	glGenTextures(1, &color_buffer);
+	glBindTexture(GL_TEXTURE_2D, color_buffer);
+	//32bits isn't really necessary
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glGenRenderbuffers(1, &hdr_depth);
+	glBindRenderbuffer(GL_RENDERBUFFER, hdr_depth);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, X, Y);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_buffer, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdr_depth);
+
+	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+		std::cout << "frame buffer2 not complete!\n";
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void openglcode::render_scene(const Shader& shader) {
 	glm::mat4 model = glm::mat4(1.0f);
-
-	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.0f));
-	model = glm::scale(model, glm::vec3(2.0f));
+	model = glm::translate(model, glm::vec3(2.0f, -0.5f, 2.0f));
+	model = glm::scale(model, glm::vec3(0.5f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(-1.0f, -0.75f, -1.0f));
+	model = glm::scale(model, glm::vec3(0.25f));
+	shader.set_mat4("model", model);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -8.0f));
+	model = glm::scale(model, glm::vec3(2.5f, 2.5f, 13.75f));
+	shader.set_mat4("model", model);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+
+	/*
 	model = glm::mat4(1.0f);
 	model = glm::translate(model, light_pos);
 	model = glm::scale(model, glm::vec3(0.1f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
-
+	glBindVertexArray(0);*/
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -482,7 +536,6 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 
 void openglcode::process_input(GLFWwindow* window) {
 	float camera_speed = 2.5f * delta_time;
-
 
 	//커서 안보이게 하고 창화면에 가둠
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -508,24 +561,6 @@ void openglcode::process_input(GLFWwindow* window) {
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
 		camera_pos.y -= camera_speed;
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-		if (height_scale < 1.0f) {
-			height_scale += 0.0005f;
-		}
-		else {
-			height_scale = 1.0f;
-		}
-	}
-
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-		if (height_scale > 0.0f) {
-			height_scale -= 0.0005f;
-		}
-		else {
-			height_scale = 0.0f;
-		}
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {

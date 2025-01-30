@@ -24,7 +24,7 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
-	unsigned int vao, vbo, sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map;
+	unsigned int vao, vbo, color_buffer, sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map, hdr_fbo, hdr_depth;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, nor_tex, disp_tex;
@@ -33,13 +33,13 @@ private:
 	float camera_speed;
 	float delta_time;
 	float last_frame;
-	float outline_scale;
-	float height_scale;
+	float exposure;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_skybox();
 	void framebuffer();
+	void hdrbuffer();
 	void depth_cubemap();
 	void render_scene(const Shader &shader);
 	unsigned int load_cubemap(std::vector<std::string> faces);
