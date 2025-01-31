@@ -536,13 +536,14 @@ void openglcode::hdrbuffer() {
 
 	glDrawBuffers(2, attachments);
 
-	glGenFramebuffers(2, pbo);
-	glGenTextures(2, pbuffer);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		std::cout << "frame buffer2 not complete!\n";
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenFramebuffers(2, pbo);
+	glGenTextures(2, pbuffer);
 
 	for (unsigned int i = 0; i < 2; i++) {
 		glBindFramebuffer(GL_FRAMEBUFFER, pbo[i]);
