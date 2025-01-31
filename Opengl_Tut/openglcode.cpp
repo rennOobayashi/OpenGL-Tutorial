@@ -12,6 +12,7 @@ float last_y = Y / 2;
 bool first_mouse = true;
 float sensivity = 0.05f;
 float fov = 45.0f;;
+unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
 
 void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -74,6 +75,8 @@ void openglcode::set_n_run() {
 	glEnable(GL_DEPTH_TEST);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader light_shader("geofragver/vertex.vs", "geofragver/bloom_fragment.fs");
+	Shader blur_shader("geofragver/blur_vertex.vs", "geofragver/blur_fragment.fs");
 	Shader hdr_shader("geofragver/hdr_vertex.vs", "geofragver/hdr_fragment.fs");
 	draw_square();
 
@@ -83,19 +86,23 @@ void openglcode::set_n_run() {
 
 	shader.use();
 	shader.set_int("diffuse_texture", 0);
+	blur_shader.use();
+	blur_shader.set_int("image", 0);
+	hdr_shader.use();
 	hdr_shader.set_int("hdr_buffer", 0);
+	hdr_shader.set_int("bloom_blur", 1);
 
 	std::vector<glm::vec3> light_positions;
-	light_positions.push_back(glm::vec3( 0.0f,  0.0f,  -20.0f));
-	light_positions.push_back(glm::vec3(-1.4f, -1.9f,  -6.0f));
-	light_positions.push_back(glm::vec3( 0.0f, -1.8f,  -2.0f));
-	light_positions.push_back(glm::vec3( 1.0f, -1.7f,  -8.0f));
+	light_positions.push_back(glm::vec3(0.0f, 0.5f, 1.5f));
+	light_positions.push_back(glm::vec3(-4.0f, 0.25f, -3.0f));
+	light_positions.push_back(glm::vec3(3.0f, 0.0f, -1.0f));
+	light_positions.push_back(glm::vec3(-.8f, 1.4f, -1.0f));
 
 	std::vector<glm::vec3> light_colors;
-	light_colors.push_back(glm::vec3(200.0f, 200.0f, 200.0f));
-	light_colors.push_back(glm::vec3(0.1f, 0.0f, 0.0f));
-	light_colors.push_back(glm::vec3(0.0f, 0.0f, 0.2f));
-	light_colors.push_back(glm::vec3(0.0f, 0.1f, 0.0f));
+	light_colors.push_back(glm::vec3(5.0f, 5.0f, 5.0f));
+	light_colors.push_back(glm::vec3(10.0f, 0.0f, 0.0f));
+	light_colors.push_back(glm::vec3(0.0f, 0.0f, 15.0f));
+	light_colors.push_back(glm::vec3(0.0f, 5.0f, 0.0f));
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -120,22 +127,57 @@ void openglcode::set_n_run() {
 		shader.set_mat4("view", view);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
-
 		for (unsigned int i = 0; i < light_positions.size(); i++) {
 			shader.set_vec3("lights[" + std::to_string(i) + "].pos", light_positions[i]);
 			shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
 		}
-		
 		shader.set_vec3("view_pos", camera_pos);
 		render_scene(shader);
+
+		light_shader.use();
+		light_shader.set_mat4("projection", projection);
+		light_shader.set_mat4("view", view);
+		for (unsigned int i = 0; i < light_positions.size(); i++) {
+			glm::mat4 model = glm::mat4(1.0f);
+			
+			model = glm::translate(model, glm::vec3(light_positions[i]));
+			model = glm::scale(model, glm::vec3(0.25f));
+			light_shader.set_mat4("model", model);
+			light_shader.set_vec3("light_color", light_colors[i]);
+
+			glBindVertexArray(vao);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
+		}
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		bool horizontal = true, first_iter = true;
+		unsigned int amount = 10;
+		blur_shader.use();
+		for (unsigned int i = 0; i < amount; i++) {
+			glBindFramebuffer(GL_FRAMEBUFFER, pbo[horizontal]);
+			blur_shader.set_int("horizontal", horizontal);
+			glBindTexture(GL_TEXTURE_2D, first_iter ? color_buffer[1] : pbuffer[!horizontal]);
+
+			glBindVertexArray(qao);
+			glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+			glBindVertexArray(0);
+
+			horizontal = !horizontal;
+
+			if (first_iter) {
+				first_iter = false;
+			}
+		}
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		hdr_shader.use();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, color_buffer);
+		glBindTexture(GL_TEXTURE_2D, color_buffer[0]);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, color_buffer[!horizontal]);
 		hdr_shader.set_float("exposure", exposure);
-
 		glBindVertexArray(qao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
@@ -473,26 +515,51 @@ void openglcode::depth_cubemap() {
 
 void openglcode::hdrbuffer() {
 	glGenFramebuffers(1, &hdr_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
+	glGenTextures(2, color_buffer);
 
-	glGenTextures(1, &color_buffer);
-	glBindTexture(GL_TEXTURE_2D, color_buffer);
-	//32bits isn't really necessary
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	for (unsigned int i = 0; i < 2; i++) {
+		glBindTexture(GL_TEXTURE_2D, color_buffer[i]);
+		//32bits isn't really necessary
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, GL_TEXTURE_2D, color_buffer[i], 0);
+	}
 
 	glGenRenderbuffers(1, &hdr_depth);
 	glBindRenderbuffer(GL_RENDERBUFFER, hdr_depth);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, X, Y);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
-	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, color_buffer, 0);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, hdr_depth);
+
+	glDrawBuffers(2, attachments);
+
+	glGenFramebuffers(2, pbo);
+	glGenTextures(2, pbuffer);
 
 	if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
 		std::cout << "frame buffer2 not complete!\n";
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	for (unsigned int i = 0; i < 2; i++) {
+		glBindFramebuffer(GL_FRAMEBUFFER, pbo[i]);
+		glBindTexture(GL_TEXTURE_2D, pbuffer[i]);
+		//32bits isn't really necessary
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pbuffer[i], 0);
+
+		if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+			std::cout << "frame buffer2 not complete!\n";
+		}
+
+	}
 }
 
 void openglcode::render_scene(const Shader& shader) {
@@ -513,8 +580,8 @@ void openglcode::render_scene(const Shader& shader) {
 	glBindVertexArray(0);
 
 	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -8.0f));
-	model = glm::scale(model, glm::vec3(2.5f, 2.5f, 13.75f));
+	model = glm::translate(model, glm::vec3(0.0f, -11.0f, 0.0f));
+	model = glm::scale(model, glm::vec3(10.0f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);

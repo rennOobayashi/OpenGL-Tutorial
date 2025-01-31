@@ -16,7 +16,7 @@ uniform mat4 model;
 void main()
 {
     vs_out.frag_pos = vec3(model * vec4(apos, 1.0));
-    vs_out.normal = transpose(inverse(mat3(model))) * -anormal;
+    vs_out.normal = transpose(inverse(mat3(model))) * anormal;
     vs_out.texcoords = atexcoords;
     gl_Position = projection * view * model * vec4(apos, 1.0); 
 }
