@@ -11,8 +11,7 @@ float last_x = X / 2;
 float last_y = Y / 2;
 bool first_mouse = true;
 float sensivity = 0.05f;
-float fov = 45.0f;;
-unsigned int attachments[2] = {GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1};
+float fov = 45.0f;
 
 void openglcode::init() {
 	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
@@ -513,7 +512,39 @@ void openglcode::depth_cubemap() {
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
+void openglcode::g_buffer() {
+	unsigned int attachments[3] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2 };
+
+	glGenFramebuffers(1, &gbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, gbo);
+
+	glGenTextures(1, &gpos);
+	glBindTexture(GL_TEXTURE_2D, gpos);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gpos, 0);
+
+	glGenTextures(1, &gnorm);
+	glBindTexture(GL_TEXTURE_2D, gnorm);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gnorm, 0);
+
+	glGenTextures(1, &gcolor_spec);
+	glBindTexture(GL_TEXTURE_2D, gcolor_spec);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, X, Y, 0, GL_RGBA, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1, GL_TEXTURE_2D, gcolor_spec, 0);
+
+	glDrawBuffers(3, attachments);
+}
+
 void openglcode::hdrbuffer() {
+	unsigned int attachments[2] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1 };
+
 	glGenFramebuffers(1, &hdr_fbo);
 	glBindFramebuffer(GL_FRAMEBUFFER, hdr_fbo);
 	glGenTextures(2, color_buffer);

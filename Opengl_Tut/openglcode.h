@@ -25,6 +25,7 @@ private:
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
 	unsigned int vao, vbo, color_buffer[2], sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map, hdr_fbo, hdr_depth, pbo[2], pbuffer[2];
+	unsigned int gbo, gpos, gnorm, gcolor_spec;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, nor_tex, disp_tex;
@@ -41,6 +42,7 @@ private:
 	void framebuffer();
 	void hdrbuffer();
 	void depth_cubemap();
+	void g_buffer();
 	void render_scene(const Shader &shader);
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
