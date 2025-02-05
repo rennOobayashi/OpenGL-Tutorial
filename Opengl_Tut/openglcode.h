@@ -28,7 +28,7 @@ private:
 	unsigned int gbo, gpos, gnorm, gcolor_spec;
 	char info_log[512];
 	unsigned int texture1, texture2;
-	unsigned int diff_tex, nor_tex, disp_tex;
+	unsigned int diff_tex, spec_tex, nor_tex, disp_tex;
 	unsigned int cubemap_texture;
 	unsigned char* data;
 	float camera_speed;
