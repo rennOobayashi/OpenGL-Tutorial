@@ -11,10 +11,17 @@ uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+uniform bool reverse_normal;
+
 void main()
 {
     frag_pos = vec3(model * vec4(apos, 1.0));
-    normal = transpose(inverse(mat3(model))) * anormal;
+
+    if(reverse_normal)
+        normal = transpose(inverse(mat3(model))) * (-1.0 * anormal);
+    else
+        normal = transpose(inverse(mat3(model))) * anormal;
+        
     texcoords = atexcoords;
     gl_Position = projection * view * model * vec4(apos, 1.0); 
 }

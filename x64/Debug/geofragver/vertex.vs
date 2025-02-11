@@ -3,22 +3,25 @@ layout (location = 0) in vec3 apos;
 layout (location = 1) in vec3 anormal;
 layout (location = 2) in vec2 atexcoords;
 
+out vec3 frag_pos;
+out vec3 normal;
 out vec2 texcoords;
-
-out VS_OUT {
-    vec3 frag_pos;
-    vec3 normal;
-    vec2 texcoords;
-} vs_out;
 
 uniform mat4 projection;
 uniform mat4 view;
 uniform mat4 model;
 
+uniform bool reverse_normal;
+
 void main()
 {
-    vs_out.frag_pos = vec3(model * vec4(apos, 1.0));
-    vs_out.normal = transpose(inverse(mat3(model))) * anormal;
-    vs_out.texcoords = atexcoords;
+    frag_pos = vec3(model * vec4(apos, 1.0));
+
+    if(reverse_normal)
+        normal = transpose(inverse(mat3(model))) * (-1.0 * anormal);
+    else
+        normal = transpose(inverse(mat3(model))) * anormal;
+        
+    texcoords = atexcoords;
     gl_Position = projection * view * model * vec4(apos, 1.0); 
 }

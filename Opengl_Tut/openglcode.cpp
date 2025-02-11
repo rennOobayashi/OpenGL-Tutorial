@@ -72,8 +72,10 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader simple_depth_shader("geofragver/shadow_vertex_quad.vs", "geofragver/shadow_fragment_quad.fs", "geofragver/geometry.gs");
 	Shader deferred_shader("geofragver/deferred_vertex.vs", "geofragver/deferred_fragment_.fs");
 	Shader light_shader("geofragver/light_vertex.vs", "geofragver/light_fragment.fs");
 	draw_square();
@@ -82,11 +84,17 @@ void openglcode::set_n_run() {
 	spec_tex = load_texture("texture/watashi_specular.png");
 
 	g_buffer();
+	depth_cubemap();
 
 	std::vector<glm::vec3> light_positions;
 	std::vector<glm::vec3> light_colors;
 	const unsigned int nr_lights = 32;
 	srand(13);
+
+	float aspect = (float)shadow_x / (float)shadow_y;
+	float near = 1.0f;
+	float far = 25.0f;
+	glm::mat4 shadow_proj = glm::perspective(glm::radians(90.0f), aspect, near, far);
 
 	for (unsigned int i = 0; i < nr_lights; i++) {
 		float x, y, z;
@@ -105,6 +113,7 @@ void openglcode::set_n_run() {
 	shader.use();
 	shader.set_int("diffuse_texture", 0);
 	shader.set_int("specular_texture", 1);
+	shader.set_int("depth_map", 2);
 
 	deferred_shader.use();
 	deferred_shader.set_int("gposition", 0);
@@ -124,6 +133,38 @@ void openglcode::set_n_run() {
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		std::vector<glm::mat4> shadow_transform;
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(1.0f, 0.0f, 0.0), glm::vec3(0.0f, -1.0f, 0.0f)));
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(-1.0f, 0.0f, 0.0), glm::vec3(0.0f, -1.0f, 0.0f)));
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 1.0f, 0.0), glm::vec3(0.0f, 0.0f, 1.0f)));
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, -1.0f, 0.0), glm::vec3(0.0f, 0.0f, -1.0f)));
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 0.0f, 1.0), glm::vec3(0.0f, -1.0f, 0.0f)));
+		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 0.0f, -1.0), glm::vec3(0.0f, -1.0f, 0.0f)));
+
+		glViewport(0, 0, shadow_x, shadow_y);
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+		glClear(GL_DEPTH_BUFFER_BIT);
+		simple_depth_shader.use();
+
+		for (unsigned int i = 0; i < shadow_transform.size(); i++) {
+			simple_depth_shader.set_mat4("shadow_matrices[" + std::to_string(i) + "]", shadow_transform[i]);
+		}
+
+		simple_depth_shader.set_float("far_cube", far);
+		for (unsigned int i = 0; i < light_positions.size(); i++) {
+			simple_depth_shader.set_vec3("light_pos[" + std::to_string(i) + "]", light_pos);
+		}
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, diff_tex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, spec_tex);
+		render_scene(simple_depth_shader);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glViewport(0, 0, X, Y);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		
 		glBindFramebuffer(GL_FRAMEBUFFER, gbo);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -137,6 +178,8 @@ void openglcode::set_n_run() {
 		glBindTexture(GL_TEXTURE_2D, diff_tex);
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, spec_tex);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map);
 		render_scene(shader);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -151,12 +194,14 @@ void openglcode::set_n_run() {
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, gcolor_spec);
 		for (unsigned int i = 0; i < light_positions.size(); i++) {
-			const float linear = 0.7f;
-			const float quadratic = 1.8f;
+			const float constant = 1.0f, linear = 0.7f, quadratic = 1.8f;
+			const float max_brightness = std::fmaxf(std::fmaxf(light_colors[i].r, light_colors[i].g), light_colors[i].b);
+			float radius = (-linear + std::sqrt(linear - 4 * quadratic * (constant - (256.0f / 5.0f) * max_brightness))) / (2.0f * quadratic);
 			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].position", light_positions[i]);
 			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
 			deferred_shader.set_float("lights[" + std::to_string(i) + "].linear", linear);
 			deferred_shader.set_float("lights[" + std::to_string(i) + "].quadratic", quadratic);
+			deferred_shader.set_float("lights[" + std::to_string(i) + "].radius", radius);
 		}
 		deferred_shader.set_vec3("view_pos", camera_pos);
 		glBindVertexArray(qao);
@@ -610,8 +655,19 @@ void openglcode::hdrbuffer() {
 
 void openglcode::render_scene(const Shader& shader) {
 	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(2.0f, -0.5f, 2.0f));
-	model = glm::scale(model, glm::vec3(0.5f));
+	model = glm::scale(model, glm::vec3(3.5f));
+	shader.set_mat4("model", model);
+	glDisable(GL_CULL_FACE);
+	shader.set_int("reverse_normal", true);
+	glBindVertexArray(vao);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	glBindVertexArray(0);
+	shader.set_int("reverse_normal", false);
+	glEnable(GL_CULL_FACE);
+
+	model = glm::mat4(1.0f);
+	model = glm::translate(model, glm::vec3(2.75f, -3.25f, 2.75f));
+	model = glm::scale(model, glm::vec3(0.25f));
 	shader.set_mat4("model", model);
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -625,13 +681,6 @@ void openglcode::render_scene(const Shader& shader) {
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);
 
-	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, -11.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(10.0f));
-	shader.set_mat4("model", model);
-	glBindVertexArray(vao);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	glBindVertexArray(0);
 
 	/*
 	model = glm::mat4(1.0f);

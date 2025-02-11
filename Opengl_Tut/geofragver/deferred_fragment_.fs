@@ -8,6 +8,7 @@ struct light {
     vec3 color;
     float linear;
     float quadratic;
+    float radius;
 };
 
 const int nr_lights = 32;
@@ -30,19 +31,22 @@ void main()
     vec3 view_dir = normalize(view_pos - frag_pos);
 
     for (int i = 0; i < nr_lights; i++) {
-        //diffuse
-        vec3 light_dir = normalize(lights[i].position - frag_pos);
-        vec3 _diffuse = max(dot(normal, light_dir), 0.0) * diffuse * lights[i].color;
-        //specular
-        vec3 halfway_dir = normalize(light_dir + view_dir);
-        float spec = pow(max(dot(normal, halfway_dir), 0.0), 16.0);
-        vec3 _specular = lights[i].color * spec * specular;
-        //attenuation
         float distance = length(lights[i].position - frag_pos);
-        float attenuation = 1.0 / (1.0 + lights[i].linear * distance + lights[i].quadratic * distance * distance);
-        _diffuse *= attenuation;
-        _specular *= attenuation;
-        lighting += _diffuse + _specular;
+
+        if (distance < lights[i].radius) {
+            //diffuse
+            vec3 light_dir = normalize(lights[i].position - frag_pos);
+            vec3 _diffuse = max(dot(normal, light_dir), 0.0) * diffuse * lights[i].color;
+            //specular
+            vec3 halfway_dir = normalize(light_dir + view_dir);
+            float spec = pow(max(dot(normal, halfway_dir), 0.0), 16.0);
+            vec3 _specular = lights[i].color * spec * specular;
+            //attenuation
+            float attenuation = 1.0 / (1.0 + lights[i].linear * distance + lights[i].quadratic * distance * distance);
+            _diffuse *= attenuation;
+            _specular *= attenuation;
+            lighting += _diffuse + _specular;
+        }
     }
 
     frag_color = vec4(lighting, 1.0);
