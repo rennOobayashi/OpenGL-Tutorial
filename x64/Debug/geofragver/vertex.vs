@@ -15,13 +15,11 @@ uniform bool reverse_normal;
 
 void main()
 {
-    frag_pos = vec3(model * vec4(apos, 1.0));
+    vec4 view_pos = view * model * vec4(apos, 1.0);
 
-    if(reverse_normal)
-        normal = transpose(inverse(mat3(model))) * (-1.0 * anormal);
-    else
-        normal = transpose(inverse(mat3(model))) * anormal;
-        
+    frag_pos = view_pos.xyz;
     texcoords = atexcoords;
-    gl_Position = projection * view * model * vec4(apos, 1.0); 
+    normal = transpose(inverse(mat3(model))) * (reverse_normal ? -anormal : anormal);
+    
+    gl_Position = projection * view_pos; 
 }
