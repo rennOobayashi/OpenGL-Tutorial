@@ -79,10 +79,11 @@ void openglcode::set_n_run() {
 	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	Shader ssao_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_fragment.fs");
 	Shader simple_depth_shader("geofragver/shadow_vertex_quad.vs", "geofragver/shadow_fragment_quad.fs", "geofragver/geometry.gs");
 	Shader deferred_shader("geofragver/deferred_vertex.vs", "geofragver/deferred_fragment.fs");
 	Shader light_shader("geofragver/light_vertex.vs", "geofragver/light_fragment.fs");
+	Shader ssao_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_fragment.fs");
+	Shader ssao_blur_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_blur_fragment.fs");
 	draw_square();
 
 	diff_tex = load_texture("texture/watashi.png");
@@ -90,6 +91,7 @@ void openglcode::set_n_run() {
 
 	g_buffer();
 	depth_cubemap();
+	ssao();
 
 	std::vector<glm::vec3> light_positions;
 	std::vector<glm::vec3> light_colors;
@@ -120,15 +122,18 @@ void openglcode::set_n_run() {
 	shader.set_int("specular_texture", 1);
 	shader.set_int("depth_map", 2);
 
+	deferred_shader.use();
+	deferred_shader.set_int("gposition", 0);
+	deferred_shader.set_int("gnormal", 1);
+	deferred_shader.set_int("gcolor_spec", 2);
+
 	ssao_shader.use();
 	ssao_shader.set_int("gposition", 0);
 	ssao_shader.set_int("gnormal", 1);
 	ssao_shader.set_int("noise_tex", 2);
 
-	deferred_shader.use();
-	deferred_shader.set_int("gposition", 0);
-	deferred_shader.set_int("gnormal", 1);
-	deferred_shader.set_int("gcolor_spec", 2);
+	ssao_blur_shader.use();
+	deferred_shader.set_int("ssao_input", 0);
 
 	std::uniform_real_distribution<float> random_floats(0.0, 1.0);
 	std::default_random_engine generator;
@@ -247,6 +252,16 @@ void openglcode::set_n_run() {
 		glBindTexture(GL_TEXTURE_2D, gnorm);
 		glActiveTexture(GL_TEXTURE2);
 		glBindTexture(GL_TEXTURE_2D, noise_texture);
+		glBindVertexArray(qao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+		glBindFramebuffer(GL_FRAMEBUFFER, ssbro);
+		glClear(GL_COLOR_BUFFER_BIT);
+		ssao_blur_shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, sscolor_buffer_blur);
 		glBindVertexArray(qao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
@@ -681,8 +696,18 @@ void openglcode::ssao() {
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, X, Y, 0, GL_RED, GL_FLOAT, NULL);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sscolor_buffer, 0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenFramebuffers(1, &ssbro);
+	glBindFramebuffer(GL_FRAMEBUFFER, ssbro);
+	glGenTextures(1, &sscolor_buffer_blur);
+	glBindTexture(GL_TEXTURE_2D, sscolor_buffer_blur);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, X, Y, 0, GL_RED, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, sscolor_buffer_blur, 0);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
