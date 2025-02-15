@@ -84,6 +84,8 @@ void openglcode::set_n_run() {
 	Shader light_shader("geofragver/light_vertex.vs", "geofragver/light_fragment.fs");
 	Shader ssao_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_fragment.fs");
 	Shader ssao_blur_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_blur_fragment.fs");
+	Shader ssao_light_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_light_fragment.fs");
+	
 	draw_square();
 
 	diff_tex = load_texture("texture/watashi.png");
@@ -132,8 +134,14 @@ void openglcode::set_n_run() {
 	ssao_shader.set_int("gnormal", 1);
 	ssao_shader.set_int("noise_tex", 2);
 
+	ssao_light_shader.use();
+	ssao_light_shader.set_int("gposition", 0);
+	ssao_light_shader.set_int("gnormal", 1);
+	ssao_light_shader.set_int("gcolor_spec", 2);
+	ssao_light_shader.set_int("ssao", 3);
+
 	ssao_blur_shader.use();
-	deferred_shader.set_int("ssao_input", 0);
+	ssao_blur_shader.set_int("ssao_input", 0);
 
 	std::uniform_real_distribution<float> random_floats(0.0, 1.0);
 	std::default_random_engine generator;
@@ -267,7 +275,6 @@ void openglcode::set_n_run() {
 		glBindVertexArray(0);
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		deferred_shader.use();
@@ -288,6 +295,28 @@ void openglcode::set_n_run() {
 			deferred_shader.set_float("lights[" + std::to_string(i) + "].radius", radius);
 		}
 		deferred_shader.set_vec3("view_pos", camera_pos);
+		glBindVertexArray(qao);
+		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		glBindVertexArray(0);
+
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		deferred_shader.use();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, gpos);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, gnorm);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, gcolor_spec);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, sscolor_buffer_blur);
+		for (unsigned int i = 0; i < light_positions.size(); i++) {
+			const float constant = 1.0f, linear = 0.7f, quadratic = 1.8f;
+			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].position", light_positions[i]);
+			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
+			deferred_shader.set_float("lights[" + std::to_string(i) + "].linear", linear);
+			deferred_shader.set_float("lights[" + std::to_string(i) + "].quadratic", quadratic);
+		}
 		glBindVertexArray(qao);
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 		glBindVertexArray(0);
