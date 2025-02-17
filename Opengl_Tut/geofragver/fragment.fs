@@ -60,9 +60,9 @@ void main()
 
     gposition = frag_pos;
     gnormal = normalize(normal);
-    gcolor_spec.rgb = vec3(0.95);
-    // gcolor_spec.rgb = texture(diffuse_texture, texcoords).rgb;
-    // gcolor_spec.a = texture(specular_texture, texcoords).r;
+    //gcolor_spec.rgb = vec3(0.95);
+    gcolor_spec.rgb = texture(diffuse_texture, texcoords).rgb * 0.5;
+    gcolor_spec.a = texture(specular_texture, texcoords).r;
 }
 
 float shadow_calculation(vec3 frag_pos, vec3 light_pos) {

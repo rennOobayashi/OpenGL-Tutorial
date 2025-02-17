@@ -46,5 +46,5 @@ void main()
 
     occlusion = 1.0 - (occlusion / kernel_size);
 
-    frag_color = occlusion;
+    frag_color = pow(occlusion, radius); //kernel_size, radius, bias, noise_kernel_size(of have)
 }
