@@ -79,110 +79,28 @@ void openglcode::set_n_run() {
 	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	Shader simple_depth_shader("geofragver/shadow_vertex_quad.vs", "geofragver/shadow_fragment_quad.fs", "geofragver/geometry.gs");
-	Shader deferred_shader("geofragver/deferred_vertex.vs", "geofragver/deferred_fragment.fs");
-	Shader light_shader("geofragver/light_vertex.vs", "geofragver/light_fragment.fs");
-	Shader ssao_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_fragment.fs");
-	Shader ssao_blur_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_blur_fragment.fs");
-	Shader ssao_light_shader("geofragver/ssao_vertex.vs", "geofragver/ssao_light_fragment.fs");
-	
-	draw_square();
+	draw_sphere();
 
-	diff_tex = load_texture("texture/watashi.png");
-	spec_tex = load_texture("texture/watashi_specular.png");
+	glm::vec3 light_positions[] = {
+		glm::vec3(-10.0f,  10.0f, 10.0f),
+		glm::vec3( 10.0f,  10.0f, 10.0f),
+		glm::vec3(-10.0f, -10.0f, 10.0f),
+		glm::vec3( 10.0f, -10.0f, 10.0f),
+	};
+	glm::vec3 light_colors[] = {
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+	};
 
-	g_buffer();
-	depth_cubemap();
-	ssao();
-
-	std::vector<glm::vec3> light_positions;
-	std::vector<glm::vec3> light_colors;
-	const unsigned int nr_lights = 32;
-	srand(13);
-
-	float aspect = (float)shadow_x / (float)shadow_y;
-	float near = 1.0f;
-	float far = 25.0f;
-	glm::mat4 shadow_proj = glm::perspective(glm::radians(90.0f), aspect, near, far);
-
-	for (unsigned int i = 0; i < nr_lights; i++) {
-		float x, y, z;
-		x = float(((rand() % 100) / 100.0f) * 6.0f - 3.0f);
-		y = float(((rand() % 100) / 100.0f) * 6.0f - 4.0f);
-		z = float(((rand() % 100) / 100.0f) * 6.0f - 3.0f);
-		light_positions.push_back(glm::vec3(x,  y, z));
-
-		//between 0.5 and 1.0
-		x = float(((rand() % 100) / 200.0f) + 0.5f);
-		y = float(((rand() % 100) / 200.0f) + 0.5f);
-		z = float(((rand() % 100) / 200.0f) + 0.5f);
-		light_colors.push_back(glm::vec3(x, y, z));
-	}
+	int nr_rows = 5;
+	int nr_columns = 5;
+	float spacing = 2.5;
 
 	shader.use();
-	shader.set_int("diffuse_texture", 0);
-	shader.set_int("specular_texture", 1);
-	shader.set_int("depth_map", 2);
-
-	deferred_shader.use();
-	deferred_shader.set_int("gposition", 0);
-	deferred_shader.set_int("gnormal", 1);
-	deferred_shader.set_int("gcolor_spec", 2);
-
-	ssao_shader.use();
-	ssao_shader.set_int("gposition", 0);
-	ssao_shader.set_int("gnormal", 1);
-	ssao_shader.set_int("noise_tex", 2);
-
-	ssao_light_shader.use();
-	ssao_light_shader.set_int("gposition", 0);
-	ssao_light_shader.set_int("gnormal", 1);
-	ssao_light_shader.set_int("gcolor_spec", 2);
-	ssao_light_shader.set_int("ssao", 3);
-
-	ssao_blur_shader.use();
-	ssao_blur_shader.set_int("ssao_input", 0);
-
-	std::uniform_real_distribution<float> random_floats(0.0, 1.0);
-	std::default_random_engine generator;
-	std::vector<glm::vec3> ssao_kernel;
-
-	for (unsigned int i = 0; i < 64; i++) {
-		glm::vec3 sample(
-			random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator)
-		);
-		float scale = (float)i / 64.0f;
-
-		sample = glm::normalize(sample);
-		sample *= random_floats(generator);
-		ssao_kernel.push_back(sample);
-
-		scale = lerp(0.1f, 1.0f, scale * scale);
-		sample *= scale;
-		ssao_kernel.push_back(sample);
-	}
-
-	std::vector<glm::vec3> ssao_noise;
-
-	for (unsigned int i = 0; i < 16; i++) {
-		glm::vec3 noise(
-			random_floats(generator) * 2.0 - 1.0,
-			random_floats(generator) * 2.0 - 1.0,
-			0.0f
-		);
-
-		ssao_noise.push_back(noise);
-	}
-
-	glGenTextures(1, &noise_texture);
-	glBindTexture(GL_TEXTURE_2D, noise_texture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, 4, 4, 0, GL_RGB, GL_FLOAT, &ssao_noise[0]);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	shader.set_vec3("albedo", 0.5f, 0.0f, 0.0f);
+	shader.set_float("ao", 1.0f);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -190,165 +108,57 @@ void openglcode::set_n_run() {
 		delta_time = current_frame - last_frame;
 		last_frame = current_frame;
 
-		//light_pos.z = (float)(sin(glfwGetTime() * 0.5) * 3.0f);
-
 		process_input(window);
 
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		std::vector<glm::mat4> shadow_transform;
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(1.0f, 0.0f, 0.0), glm::vec3(0.0f, -1.0f, 0.0f)));
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(-1.0f, 0.0f, 0.0), glm::vec3(0.0f, -1.0f, 0.0f)));
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 1.0f, 0.0), glm::vec3(0.0f, 0.0f, 1.0f)));
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, -1.0f, 0.0), glm::vec3(0.0f, 0.0f, -1.0f)));
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 0.0f, 1.0), glm::vec3(0.0f, -1.0f, 0.0f)));
-		shadow_transform.push_back(shadow_proj* glm::lookAt(light_pos, light_pos + glm::vec3(0.0f, 0.0f, -1.0), glm::vec3(0.0f, -1.0f, 0.0f)));
-
-		glViewport(0, 0, shadow_x, shadow_y);
-		glBindFramebuffer(GL_FRAMEBUFFER, fbo);
-		glClear(GL_DEPTH_BUFFER_BIT);
-		simple_depth_shader.use();
-
-		for (unsigned int i = 0; i < shadow_transform.size(); i++) {
-			simple_depth_shader.set_mat4("shadow_matrices[" + std::to_string(i) + "]", shadow_transform[i]);
-		}
-
-		simple_depth_shader.set_float("far_cube", far);
-		for (unsigned int i = 0; i < light_positions.size(); i++) {
-			simple_depth_shader.set_vec3("light_pos[" + std::to_string(i) + "]", light_pos);
-		}
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
-		render_scene(simple_depth_shader);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		glViewport(0, 0, X, Y);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		glBindFramebuffer(GL_FRAMEBUFFER, gbo);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glm::mat4 projection = glm::perspective(glm::radians(45.0f), (float)X / (float)Y, 0.1f, 100.0f);
+		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
 		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
-		glm::mat4 model = glm::mat4(1.0f);
 		shader.use();
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, diff_tex);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, spec_tex);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_CUBE_MAP, depth_cube_map);
-		render_scene(shader);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-		glBindFramebuffer(GL_FRAMEBUFFER, ssbo);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ssao_shader.use();
-		for (unsigned int i = 0; i < 64; i++) {
-			ssao_shader.set_vec3("samples[" + std::to_string(i) + "]", ssao_kernel[i]);
-		}
-		ssao_shader.set_mat4("projection", projection);
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gpos);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gnorm);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, noise_texture);
-		glBindVertexArray(qao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		for (int i = 0; i < nr_rows; i++) {
+			shader.set_float("metallic", (float)i / (float)nr_rows);
+			for (int j = 0; j < nr_columns; j++) {
+				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
 
-		glBindFramebuffer(GL_FRAMEBUFFER, ssbro);
-		glClear(GL_COLOR_BUFFER_BIT);
-		ssao_blur_shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, sscolor_buffer_blur);
-		glBindVertexArray(qao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		deferred_shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gpos);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gnorm);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gcolor_spec);
-		for (unsigned int i = 0; i < light_positions.size(); i++) {
-			const float constant = 1.0f, linear = 0.7f, quadratic = 1.8f;
-			const float max_brightness = std::fmaxf(std::fmaxf(light_colors[i].r, light_colors[i].g), light_colors[i].b);
-			float radius = (-linear + std::sqrt(linear - 4 * quadratic * (constant - (256.0f / 5.0f) * max_brightness))) / (2.0f * quadratic);
-			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].position", light_positions[i]);
-			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
-			deferred_shader.set_float("lights[" + std::to_string(i) + "].linear", linear);
-			deferred_shader.set_float("lights[" + std::to_string(i) + "].quadratic", quadratic);
-			deferred_shader.set_float("lights[" + std::to_string(i) + "].radius", radius);
-		}
-		deferred_shader.set_vec3("view_pos", camera_pos);
-		glBindVertexArray(qao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		deferred_shader.use();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, gpos);
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, gnorm);
-		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, gcolor_spec);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, sscolor_buffer_blur);
-		for (unsigned int i = 0; i < light_positions.size(); i++) {
-			const float constant = 1.0f, linear = 0.7f, quadratic = 1.8f;
-			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].position", light_positions[i]);
-			deferred_shader.set_vec3("lights[" + std::to_string(i) + "].color", light_colors[i]);
-			deferred_shader.set_float("lights[" + std::to_string(i) + "].linear", linear);
-			deferred_shader.set_float("lights[" + std::to_string(i) + "].quadratic", quadratic);
-		}
-		glBindVertexArray(qao);
-		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		glBindVertexArray(0);
-
-		glBindFramebuffer(GL_READ_FRAMEBUFFER, gbo);
-		glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
-		glBlitFramebuffer(0, 0, X, Y, 0, 0, X, Y, GL_DEPTH_BUFFER_BIT, GL_NEAREST);
-		glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-		light_shader.use();
-		light_shader.set_mat4("projection", projection);
-		light_shader.set_mat4("view", view);
-
-		for (unsigned int i = 0; i < light_positions.size(); i++) {
-			model = glm::mat4(1.0f);
-			model = glm::translate(model, glm::vec3(light_positions[i]));
-			model = glm::scale(model, glm::vec3(0.125f));
-			light_shader.set_mat4("model", model);
-			light_shader.set_vec3("light_color", light_colors[i]);
-
-			glBindVertexArray(vao);
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-			glBindVertexArray(0);
+				glm::mat4 model = glm::mat4(1.0f);
+				model = glm::translate(model, glm::vec3(
+					(j - (nr_columns / 2)) * spacing, //x
+					(i - (nr_rows / 2)) * spacing,    //y
+					0.0f));							  //z
+				shader.set_mat4("model", model);
+				shader.set_mat3("normal_matrix", glm::transpose(glm::inverse(glm::mat3(model))));
+				
+				glBindVertexArray(sphere_vao);
+				glDrawElements(GL_TRIANGLE_STRIP,  index_cnt, GL_UNSIGNED_INT, 0);
+			}
 		}
 
-		//컬러 버퍼(이미지 그리기 및 화면 출력) 교체
+		for (unsigned int i = 0; i < sizeof(light_positions) / sizeof(light_positions[0]); i++) {
+			glm::vec3 new_pos = light_positions[i];
+			shader.set_vec3("light_positions[" + std::to_string(i) + "]", new_pos);
+			shader.set_vec3("light_colors[" + std::to_string(i) + "]", light_colors[i]);
+
+			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::translate(model, new_pos);
+			model = glm::scale(model, glm::vec3(0.5f));
+			shader.set_mat4("model", model);
+			shader.set_mat3("nomral_matrix", glm::transpose(glm::inverse(glm::mat3(model))));
+			glBindVertexArray(sphere_vao);
+			glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
+		}
 		glfwSwapBuffers(window);
-		//이벤트 확인
 		glfwPollEvents();
 	}
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
+	glDeleteVertexArrays(1, &sphere_vao);
+	glDeleteBuffers(1, &eao);
+	glDeleteBuffers(1, &ebo);
 	glDeleteProgram(shader.id);
 
 	glfwTerminate();
@@ -540,6 +350,90 @@ void openglcode::draw_square() {
 	glEnableVertexAttribArray(1);
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glBindVertexArray(0);
+}
+
+void openglcode::draw_sphere() {
+	std::vector<glm::vec3> position;
+	std::vector<glm::vec3> normals;
+	std::vector<glm::vec2> uv;
+	std::vector<unsigned int> indices;
+	std::vector<float> data;
+	const unsigned int x_segments = 64;
+	const unsigned int y_segments = 64;
+	const float pi = 3.14159265359f;
+	bool odd_rows = false;
+
+	glGenVertexArrays(1, &sphere_vao);
+
+	glGenBuffers(1, &eao);
+	glGenBuffers(1, &ebo);
+
+	for (unsigned int x = 0; x <= x_segments; x++) {
+		for (unsigned int y = 0; y <= y_segments; y++) {
+			float _x_segment = (float)X / (float)x_segments;
+			float _y_segment = (float)Y / (float)y_segments;
+			float x_pos = std::cos(x_segments * 2.0f * pi) * std::sin(y_segments * pi);
+			float y_pos = std::cos(y_segments * 2.0f * pi);
+			float z_pos = std::sin(x_segments * 2.0f * pi) * std::sin(y_segments * pi);
+			
+			position.push_back(glm::vec3(x_pos, y_pos, z_pos));
+			uv.push_back(glm::vec2(_x_segment, _y_segment));
+			normals.push_back(glm::vec3(x_pos, y_pos, z_pos));
+		}
+	}
+
+	std::cout << "1 clear\n";
+
+	for (unsigned int y = 0; y < y_segments; y++) {
+		if (!odd_rows) {
+			for (unsigned int x = 0; x <= x_segments; x++) {
+				indices.push_back(y * (x_segments + 1) + x);
+				indices.push_back((y + 1) * (x_segments + 1) + x);
+			}
+		}
+		else {
+			for (int x = x_segments; x >= 0; x--) {
+				indices.push_back((y + 1) * (x_segments + 1) + x);
+				indices.push_back(y * (x_segments + 1) + x);
+			}
+		}
+		odd_rows = !odd_rows;
+	}
+	std::cout << "2 clear\n";
+
+	index_cnt = indices.size();
+
+	for (unsigned int i = 0; i < position.size(); i++) {
+		data.push_back(position[i].x);
+		data.push_back(position[i].y);
+		data.push_back(position[i].z);
+
+		if (normals.size() > 0) {
+			data.push_back(normals[i].x);
+			data.push_back(normals[i].y);
+			data.push_back(normals[i].z);
+		}
+		
+		if (uv.size() > 0) {
+			data.push_back(uv[i].x);
+			data.push_back(uv[i].y);
+		}
+	}
+	std::cout << "3 clear\n";
+
+	unsigned int stride = (3 + 2 + 3) * sizeof(float);
+	glBindVertexArray(sphere_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, sphere_vao);
+	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
+	
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
+	glEnableVertexAttribArray(1);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, stride, (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, stride, (void*)(6 * sizeof(float)));
 }
 
 unsigned int openglcode::load_texture(char const* path) {

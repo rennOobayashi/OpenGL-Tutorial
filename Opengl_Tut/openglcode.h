@@ -29,6 +29,8 @@ private:
 	unsigned int vao, vbo, color_buffer[2], sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map, hdr_fbo, hdr_depth, pbo[2], pbuffer[2];
 	unsigned int gbo, gpos, gnorm, gcolor_spec, noise_texture;
 	unsigned int ssbo, sscolor_buffer, ssbro, sscolor_buffer_blur;
+	unsigned int sphere_vao, eao, ebo;
+	unsigned int index_cnt;
 	char info_log[512];
 	unsigned int texture1, texture2;
 	unsigned int diff_tex, spec_tex, nor_tex, disp_tex;
@@ -41,6 +43,7 @@ private:
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
+	void draw_sphere();
 	void draw_skybox();
 	void framebuffer();
 	void hdrbuffer();
