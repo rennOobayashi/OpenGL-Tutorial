@@ -26,6 +26,9 @@ void main()
 {
     vec3 n = normalize(normal);
     vec3 v = normalize(cam_pos - world_pos);
+
+    vec3 fo = vec3(0.04);
+    fo = mix(fo, albedo, metallic);
     
     vec3 lo = vec3(0.0);
 
@@ -37,10 +40,7 @@ void main()
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = light_colors[i] * attenuation;
 
-        vec3 fo = vec3(0.04);
-        fo = mix(fo, albedo, metallic);
-        vec3 f = fresnel_schlick(max(dot(h, v), 0.0), fo);
-
+        vec3 f = fresnel_schlick(clamp(dot(h, v), 0.0, 1.0), fo);
         float ndf = distributionggx(n, h, roughness);
         float g = gemoetry_smith(n, v, l, roughness);
 

@@ -18,5 +18,5 @@ void main()
     world_pos = vec3(model * vec4(apos, 1.0));
     normal = anormal * normal_matrix;
 
-    gl_Position = projection * view * model * vec4(world_pos, 1.0);
+    gl_Position = projection * view * vec4(world_pos, 1.0);
 }

@@ -76,7 +76,6 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	draw_sphere();
@@ -96,7 +95,7 @@ void openglcode::set_n_run() {
 
 	int nr_rows = 5;
 	int nr_columns = 5;
-	float spacing = 2.5;
+	float spacing = 2.5f;
 
 	shader.use();
 	shader.set_vec3("albedo", 0.5f, 0.0f, 0.0f);
@@ -119,22 +118,26 @@ void openglcode::set_n_run() {
 		shader.use();
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
+		shader.set_vec3("cam_pos", camera_pos);
+
+		glm::mat4 model = glm::mat4(1.0f);
 
 		for (int i = 0; i < nr_rows; i++) {
 			shader.set_float("metallic", (float)i / (float)nr_rows);
 			for (int j = 0; j < nr_columns; j++) {
 				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
-
-				glm::mat4 model = glm::mat4(1.0f);
+				
+				model = glm::mat4(1.0f);
 				model = glm::translate(model, glm::vec3(
 					(j - (nr_columns / 2)) * spacing, //x
 					(i - (nr_rows / 2)) * spacing,    //y
 					0.0f));							  //z
 				shader.set_mat4("model", model);
 				shader.set_mat3("normal_matrix", glm::transpose(glm::inverse(glm::mat3(model))));
-				
+
 				glBindVertexArray(sphere_vao);
-				glDrawElements(GL_TRIANGLE_STRIP,  index_cnt, GL_UNSIGNED_INT, 0);
+				glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
+				glBindVertexArray(0);
 			}
 		}
 
@@ -143,13 +146,15 @@ void openglcode::set_n_run() {
 			shader.set_vec3("light_positions[" + std::to_string(i) + "]", new_pos);
 			shader.set_vec3("light_colors[" + std::to_string(i) + "]", light_colors[i]);
 
-			glm::mat4 model = glm::mat4(1.0f);
+			model = glm::mat4(1.0f);
 			model = glm::translate(model, new_pos);
 			model = glm::scale(model, glm::vec3(0.5f));
 			shader.set_mat4("model", model);
-			shader.set_mat3("nomral_matrix", glm::transpose(glm::inverse(glm::mat3(model))));
+			shader.set_mat3("normal_matrix", glm::transpose(glm::inverse(glm::mat3(model))));
+
 			glBindVertexArray(sphere_vao);
 			glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
+			glBindVertexArray(0);
 		}
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -370,12 +375,12 @@ void openglcode::draw_sphere() {
 
 	for (unsigned int x = 0; x <= x_segments; x++) {
 		for (unsigned int y = 0; y <= y_segments; y++) {
-			float _x_segment = (float)X / (float)x_segments;
-			float _y_segment = (float)Y / (float)y_segments;
-			float x_pos = std::cos(x_segments * 2.0f * pi) * std::sin(y_segments * pi);
-			float y_pos = std::cos(y_segments * 2.0f * pi);
-			float z_pos = std::sin(x_segments * 2.0f * pi) * std::sin(y_segments * pi);
-			
+			float _x_segment = (float)x / (float)x_segments;
+			float _y_segment = (float)y / (float)y_segments;
+			float x_pos = std::cos(_x_segment * 2.0f * pi) * std::sin(_y_segment * pi);
+			float y_pos = std::cos(_y_segment * pi);
+			float z_pos = std::sin(_x_segment * 2.0f * pi) * std::sin(_y_segment * pi);
+
 			position.push_back(glm::vec3(x_pos, y_pos, z_pos));
 			uv.push_back(glm::vec2(_x_segment, _y_segment));
 			normals.push_back(glm::vec3(x_pos, y_pos, z_pos));
@@ -413,7 +418,7 @@ void openglcode::draw_sphere() {
 			data.push_back(normals[i].y);
 			data.push_back(normals[i].z);
 		}
-		
+
 		if (uv.size() > 0) {
 			data.push_back(uv[i].x);
 			data.push_back(uv[i].y);
@@ -423,11 +428,11 @@ void openglcode::draw_sphere() {
 
 	unsigned int stride = (3 + 2 + 3) * sizeof(float);
 	glBindVertexArray(sphere_vao);
-	glBindBuffer(GL_ARRAY_BUFFER, sphere_vao);
+	glBindBuffer(GL_ARRAY_BUFFER, eao);
 	glBufferData(GL_ARRAY_BUFFER, data.size() * sizeof(float), &data[0], GL_STATIC_DRAW);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned int), &indices[0], GL_STATIC_DRAW);
-	
+
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)0);
 	glEnableVertexAttribArray(1);
