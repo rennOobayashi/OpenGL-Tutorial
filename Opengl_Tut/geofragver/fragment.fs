@@ -6,17 +6,19 @@ in vec3 normal;
 in vec2 texcoords;
 
 uniform vec3 cam_pos;
-uniform vec3 albedo;
 
-uniform float metallic;
-uniform float roughness;
-uniform float ao;
+uniform sampler2D albedo_map;
+uniform sampler2D normal_map;
+uniform sampler2D metallic_map;
+uniform sampler2D roughness_map;
+uniform sampler2D ao_map;
 
 uniform vec3 light_positions[4];
 uniform vec3 light_colors[4];
 
 const float pi = 3.14159265359;
 
+vec3 get_normal_from_map();
 vec3 fresnel_schlick(float costheta, vec3 fo);
 float distributionggx(vec3 n, vec3 h, float roughness);
 float geometry_schlickggx(float ndotv, float roughness);
@@ -24,7 +26,12 @@ float gemoetry_smith(vec3 n, vec3 v, vec3 l, float roughness);
 
 void main()
 {
-    vec3 n = normalize(normal);
+    vec3 albedo = pow(texture(albedo_map, texcoords).rgb, vec3(2.2));
+    float metallic = texture(metallic_map, texcoords).r;
+    float roughness = texture(roughness_map, texcoords).r;
+    float ao = texture(ao_map, texcoords).r;
+
+    vec3 n = get_normal_from_map();
     vec3 v = normalize(cam_pos - world_pos);
 
     vec3 fo = vec3(0.04);
@@ -65,6 +72,22 @@ void main()
     color = pow(color, vec3(1.0 / 2.2));
 
     frag_color = vec4(color, 1.0);
+}
+
+vec3 get_normal_from_map() {
+    vec3 tangent_normal =  texture(normal_map, texcoords).xyz * 2.0 - 1.0;
+
+    vec3 q1 = dFdx(world_pos);
+    vec3 q2 = dFdy(world_pos);
+    vec2 st1 = dFdx(texcoords);
+    vec2 st2 = dFdy(texcoords);
+
+    vec3 n = normalize(normal);
+    vec3 t = normalize(q1 * st2.t - q2 * st1.t);
+    vec3 b = -normalize(cross(n, t));
+    mat3 tbn = mat3(t, b, n);
+
+    return normalize(tbn * tangent_normal);
 }
 
 //얼마나 표면의 빛을 잘 반사하고 굴절시키는지 계산(프리넬 방정식)

@@ -82,24 +82,27 @@ void openglcode::set_n_run() {
 
 	glm::vec3 light_positions[] = {
 		glm::vec3(-10.0f,  10.0f, 10.0f),
-		glm::vec3( 10.0f,  10.0f, 10.0f),
-		glm::vec3(-10.0f, -10.0f, 10.0f),
-		glm::vec3( 10.0f, -10.0f, 10.0f),
 	};
 	glm::vec3 light_colors[] = {
 		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
-		glm::vec3(300.0f, 300.0f, 300.0f),
 	};
 
-	int nr_rows = 5;
-	int nr_columns = 5;
-	float spacing = 2.5f;
+	int nr_rows = 1;
+	int nr_columns = 9;
+	float spacing = 2.1f;
+
+	albedo_tex = load_texture("texture/pbr/albedo.png");
+	nor_tex = load_texture("texture/pbr/normal.png");
+	metal_tex = load_texture("texture/pbr/metal.png");
+	rough_tex = load_texture("texture/pbr/rough.png");
+	ao_tex = load_texture("texture/pbr/ao.png");
 
 	shader.use();
-	shader.set_vec3("albedo", 0.5f, 0.0f, 0.0f);
-	shader.set_float("ao", 1.0f);
+	shader.set_int("albedo_map", 0);
+	shader.set_int("normal_map", 1);
+	shader.set_int("metallic_map", 2);
+	shader.set_int("roughness_map", 3);
+	shader.set_int("ao_map", 4);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -119,11 +122,20 @@ void openglcode::set_n_run() {
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
 		shader.set_vec3("cam_pos", camera_pos);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, albedo_tex);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, nor_tex);
+		glActiveTexture(GL_TEXTURE2);
+		glBindTexture(GL_TEXTURE_2D, metal_tex);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, ao_tex);
 
 		glm::mat4 model = glm::mat4(1.0f);
 
 		for (int i = 0; i < nr_rows; i++) {
-			shader.set_float("metallic", (float)i / (float)nr_rows);
 			for (int j = 0; j < nr_columns; j++) {
 				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
 				
