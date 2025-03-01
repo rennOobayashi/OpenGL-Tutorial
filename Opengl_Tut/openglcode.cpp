@@ -76,9 +76,14 @@ void openglcode::set_n_run() {
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glDepthFunc(GL_LEQUAL);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
+	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
+	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
+	draw_square();
 	draw_sphere();
+	hdrbuffer();
 
 	glm::vec3 light_positions[] = {
 		glm::vec3(-10.0f,  10.0f, 10.0f),
@@ -96,6 +101,81 @@ void openglcode::set_n_run() {
 	metal_tex = load_texture("texture/pbr/metal.png");
 	rough_tex = load_texture("texture/pbr/rough.png");
 	ao_tex = load_texture("texture/pbr/ao.png");
+	hdr_tex = load_texture("texture/hdr_cubemap.png");
+
+	unsigned int capture_fbo, capture_rbo;
+	glGenFramebuffers(1, &capture_fbo);
+	glGenRenderbuffers(1, &capture_rbo);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, capture_rbo);
+
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, color_ch;
+	float *data = stbi_loadf("texture/hdr_cubemap.png", &width, &height, &color_ch, 0);
+	unsigned int hdr_texture;
+
+	if (data) {
+		glGenTextures(1, &hdr_texture);
+		glBindTexture(GL_TEXTURE_2D, hdr_texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Failed to load HDR image." << std::endl;
+	}
+
+	unsigned int env_cubemap;
+	glGenTextures(1, &env_cubemap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	glm::mat4 capture_views[] = {
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
+	hdr_shader.use();
+	hdr_shader.set_int("equirectangular_map", 0);
+	hdr_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, hdr_tex);
+
+	glViewport(0, 0, 512, 512);
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		hdr_shader.set_mat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, env_cubemap, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	shader.use();
 	shader.set_int("albedo_map", 0);
@@ -103,6 +183,11 @@ void openglcode::set_n_run() {
 	shader.set_int("metallic_map", 2);
 	shader.set_int("roughness_map", 3);
 	shader.set_int("ao_map", 4);
+
+	background_shader.use();
+	shader.set_int("envronment_map", 0);
+
+	glViewport(0, 0, X, Y);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -168,6 +253,16 @@ void openglcode::set_n_run() {
 			glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
+
+		background_shader.use();
+		background_shader.set_mat4("projection", projection);
+		background_shader.set_mat4("view", view);
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -488,8 +583,8 @@ unsigned int openglcode::load_texture(char const* path) {
 	{
 		std::cout << "Failed to load texture\n";
 	}
-	//mipmap 생성 후 이미지 메모리 반환
 
+	//mipmap 생성 후 이미지 메모리 반환
 	stbi_image_free(data);
 
 	return texture;

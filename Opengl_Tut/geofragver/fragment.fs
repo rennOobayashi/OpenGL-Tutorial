@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 frag_color;
+out vec4 FragColor;
 
 in vec3 world_pos;
 in vec3 normal;
@@ -71,7 +71,7 @@ void main()
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0 / 2.2));
 
-    frag_color = vec4(color, 1.0);
+    FragColor = vec4(color, 1.0);
 }
 
 vec3 get_normal_from_map() {

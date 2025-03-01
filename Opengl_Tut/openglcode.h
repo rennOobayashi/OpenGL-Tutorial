@@ -33,13 +33,14 @@ private:
 	unsigned int index_cnt;
 	char info_log[512];
 	unsigned int texture1, texture2;
-	unsigned int albedo_tex, metal_tex, nor_tex, rough_tex, ao_tex;
+	unsigned int albedo_tex, metal_tex, nor_tex, rough_tex, ao_tex, hdr_tex;
 	unsigned int cubemap_texture;
 	unsigned char* data;
 	float camera_speed;
 	float delta_time;
 	float last_frame;
 	float exposure;
+	float *f_data;
 
 	void process_input(GLFWwindow* window);
 	void draw_square();
