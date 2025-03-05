@@ -80,16 +80,22 @@ void openglcode::set_n_run() {
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
+	Shader irradiance_shader("geofragver/cubemap_vertex.vs", "geofragver/irradiance_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
 	draw_square();
 	draw_sphere();
-	hdrbuffer();
 
 	glm::vec3 light_positions[] = {
 		glm::vec3(-10.0f,  10.0f, 10.0f),
+		glm::vec3(10.0f,  10.0f, 10.0f),
+		glm::vec3(-10.0f, -10.0f, 10.0f),
+		glm::vec3(10.0f, -10.0f, 10.0f),
 	};
 	glm::vec3 light_colors[] = {
 		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f),
+		glm::vec3(300.0f, 300.0f, 300.0f)
 	};
 
 	int nr_rows = 1;
@@ -101,7 +107,17 @@ void openglcode::set_n_run() {
 	metal_tex = load_texture("texture/pbr/metal.png");
 	rough_tex = load_texture("texture/pbr/rough.png");
 	ao_tex = load_texture("texture/pbr/ao.png");
-	hdr_tex = load_texture("texture/hdr_cubemap.png");
+
+	shader.use();
+	shader.set_int("irradiance_map", 0);
+	shader.set_int("albedo_map", 1);
+	shader.set_int("normal_map", 2);
+	shader.set_int("metallic_map", 3);
+	shader.set_int("roughness_map", 4);
+	shader.set_int("ao_map", 5);
+
+	background_shader.use();
+	shader.set_int("envronment_map", 0);
 
 	unsigned int capture_fbo, capture_rbo;
 	glGenFramebuffers(1, &capture_fbo);
@@ -114,8 +130,7 @@ void openglcode::set_n_run() {
 
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, color_ch;
-	float *data = stbi_loadf("texture/hdr_cubemap.png", &width, &height, &color_ch, 0);
-	unsigned int hdr_texture;
+	float *data = stbi_loadf("texture/autumn_field_puresky_4k.hdr", &width, &height, &color_ch, 0);
 
 	if (data) {
 		glGenTextures(1, &hdr_texture);
@@ -161,7 +176,7 @@ void openglcode::set_n_run() {
 	hdr_shader.set_int("equirectangular_map", 0);
 	hdr_shader.set_mat4("projection", capture_projection);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, hdr_tex);
+	glBindTexture(GL_TEXTURE_2D, hdr_texture);
 
 	glViewport(0, 0, 512, 512);
 	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
@@ -177,15 +192,43 @@ void openglcode::set_n_run() {
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	shader.use();
-	shader.set_int("albedo_map", 0);
-	shader.set_int("normal_map", 1);
-	shader.set_int("metallic_map", 2);
-	shader.set_int("roughness_map", 3);
-	shader.set_int("ao_map", 4);
+	unsigned int irradiance_map;
+	glGenTextures(1, &irradiance_map);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map);
 
-	background_shader.use();
-	shader.set_int("envronment_map", 0);
+	for (unsigned int i = 0; i < 6; i++) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+	irradiance_shader.use();
+	irradiance_shader.set_int("envronment_map", 0);
+	irradiance_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+
+	glViewport(0, 0, 32, 32);
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		irradiance_shader.set_mat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_map, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glViewport(0, 0, X, Y);
 
@@ -208,14 +251,16 @@ void openglcode::set_n_run() {
 		shader.set_mat4("view", view);
 		shader.set_vec3("cam_pos", camera_pos);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, albedo_tex);
+		glBindTexture(GL_TEXTURE_2D, irradiance_map);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, nor_tex);
+		glBindTexture(GL_TEXTURE_2D, albedo_tex);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, metal_tex);
+		glBindTexture(GL_TEXTURE_2D, nor_tex);
 		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glBindTexture(GL_TEXTURE_2D, metal_tex);
 		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glActiveTexture(GL_TEXTURE5);
 		glBindTexture(GL_TEXTURE_2D, ao_tex);
 
 		glm::mat4 model = glm::mat4(1.0f);
@@ -272,6 +317,8 @@ void openglcode::set_n_run() {
 	glDeleteBuffers(1, &eao);
 	glDeleteBuffers(1, &ebo);
 	glDeleteProgram(shader.id);
+	glDeleteProgram(hdr_shader.id);
+	glDeleteProgram(background_shader.id);
 
 	glfwTerminate();
 

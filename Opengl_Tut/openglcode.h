@@ -33,7 +33,7 @@ private:
 	unsigned int index_cnt;
 	char info_log[512];
 	unsigned int texture1, texture2;
-	unsigned int albedo_tex, metal_tex, nor_tex, rough_tex, ao_tex, hdr_tex;
+	unsigned int albedo_tex, metal_tex, nor_tex, rough_tex, ao_tex, hdr_texture;
 	unsigned int cubemap_texture;
 	unsigned char* data;
 	float camera_speed;
