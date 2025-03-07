@@ -4,23 +4,24 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
 
-glm::vec3 camera_front;
-float yaw = -90.0f;
-float pitch = 0.0f;
-float last_x = X / 2;
-float last_y = Y / 2;
+glm::mat4 capture_views[] = {
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+};
+Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+float last_x = X / 2.0f;
+float last_y = Y / 2.0f;
 bool first_mouse = true;
-float sensivity = 0.05f;
-float fov = 45.0f;
 
 float lerp(float x, float y, float z) {
 	return x + z * (y - x);
 }
 
 void openglcode::init() {
-	camera_pos = glm::vec3(0.0f, 0.0f, 3.0f);
-	camera_front = glm::vec3(0.0f, 0.0f, -1.0f);
-	camera_up = glm::vec3(0.0f, 1.0f, 0.0f);
 	light_pos = glm::vec3(0.0f, 0.0f, 0.0f);
 	light_dir = glm::vec3(-0.2f, -1.0f, -0.3f);
 
@@ -119,105 +120,7 @@ void openglcode::set_n_run() {
 	background_shader.use();
 	shader.set_int("envronment_map", 0);
 
-	unsigned int capture_fbo, capture_rbo;
-	glGenFramebuffers(1, &capture_fbo);
-	glGenRenderbuffers(1, &capture_rbo);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
-	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, capture_rbo);
-
-	stbi_set_flip_vertically_on_load(true);
-	int width, height, color_ch;
-	float *data = stbi_loadf("texture/autumn_field_puresky_4k.hdr", &width, &height, &color_ch, 0);
-
-	if (data) {
-		glGenTextures(1, &hdr_texture);
-		glBindTexture(GL_TEXTURE_2D, hdr_texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
-
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-		stbi_image_free(data);
-	}
-	else
-	{
-		std::cout << "Failed to load HDR image." << std::endl;
-	}
-
-	unsigned int env_cubemap;
-	glGenTextures(1, &env_cubemap);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
-
-	for (unsigned int i = 0; i < 6; i++)
-	{
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
-	}
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
-	glm::mat4 capture_views[] = {
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-	};
-	hdr_shader.use();
-	hdr_shader.set_int("equirectangular_map", 0);
-	hdr_shader.set_mat4("projection", capture_projection);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, hdr_texture);
-
-	glViewport(0, 0, 512, 512);
-	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
-
-	for (unsigned int i = 0; i < 6; i++) {
-		hdr_shader.set_mat4("view", capture_views[i]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, env_cubemap, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	unsigned int irradiance_map;
-	glGenTextures(1, &irradiance_map);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map);
-
-	for (unsigned int i = 0; i < 6; i++) {
-		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
-	}
-
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
-	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
-	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
-
-	irradiance_shader.use();
-	irradiance_shader.set_int("envronment_map", 0);
-	irradiance_shader.set_mat4("projection", capture_projection);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
-
-	glViewport(0, 0, 32, 32);
-	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	draw_skybox(hdr_shader, irradiance_shader);
 
 	for (unsigned int i = 0; i < 6; i++) {
 		irradiance_shader.set_mat4("view", capture_views[i]);
@@ -244,12 +147,13 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glm::mat4 projection = glm::perspective(glm::radians(fov), (float)X / (float)Y, 0.1f, 100.0f);
-		glm::mat4 view = glm::lookAt(camera_pos, camera_pos + camera_front, camera_up);
+		//std::cout << camera.fov << std::endl;
+		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
+		glm::mat4 view = camera.get_view_matrix();
 		shader.use();
 		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
-		shader.set_vec3("cam_pos", camera_pos);
+		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
 		glActiveTexture(GL_TEXTURE1);
@@ -365,60 +269,95 @@ unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
 	return texture_id;
 }
 
-void openglcode::draw_skybox() {
-	float skybox_vertices[] = {
-		//positions          
-		-1.0f,  1.0f, -1.0f,
-		-1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
+void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
+	glGenFramebuffers(1, &capture_fbo);
+	glGenRenderbuffers(1, &capture_rbo);
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f, -1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, capture_rbo);
 
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
+	stbi_set_flip_vertically_on_load(true);
+	int width, height, color_ch;
+	float* data = stbi_loadf("texture/autumn_field_puresky_4k.hdr", &width, &height, &color_ch, 0);
 
-		-1.0f, -1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f,
-		-1.0f, -1.0f,  1.0f,
+	if (data) {
+		glGenTextures(1, &hdr_texture);
+		glBindTexture(GL_TEXTURE_2D, hdr_texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F, width, height, 0, GL_RGB, GL_FLOAT, data); // note how we specify the texture's data value to be float
 
-		-1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f, -1.0f,
-		 1.0f,  1.0f,  1.0f,
-		 1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f,  1.0f,
-		-1.0f,  1.0f, -1.0f,
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-		-1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f, -1.0f,
-		 1.0f, -1.0f, -1.0f,
-		-1.0f, -1.0f,  1.0f,
-		 1.0f, -1.0f,  1.0f
-	};
+		stbi_image_free(data);
+	}
+	else
+	{
+		std::cout << "Failed to load HDR image." << std::endl;
+	}
 
-	glGenVertexArrays(1, &sao);
-	glGenBuffers(1, &sbo);
-	glBindVertexArray(sao);
-	glBindBuffer(GL_ARRAY_BUFFER, sbo);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(skybox_vertices), &skybox_vertices, GL_STATIC_DRAW);
+	glGenTextures(1, &env_cubemap);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
 
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	for (unsigned int i = 0; i < 6; i++)
+	{
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 512, 512, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
+	hdr_shader.use();
+	hdr_shader.set_int("equirectangular_map", 0);
+	hdr_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, hdr_texture);
+
+	glViewport(0, 0, 512, 512);
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		hdr_shader.set_mat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, env_cubemap, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenTextures(1, &irradiance_map);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 32, 32, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 32, 32);
+
+	irradiance_shader.use();
+	irradiance_shader.set_int("envronment_map", 0);
+	irradiance_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+
+	glViewport(0, 0, 32, 32);
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
 }
 
 void openglcode::draw_square() {
@@ -541,7 +480,7 @@ void openglcode::draw_sphere() {
 		}
 	}
 
-	std::cout << "1 clear\n";
+	//std::cout << "1 clear\n";
 
 	for (unsigned int y = 0; y < y_segments; y++) {
 		if (!odd_rows) {
@@ -558,7 +497,7 @@ void openglcode::draw_sphere() {
 		}
 		odd_rows = !odd_rows;
 	}
-	std::cout << "2 clear\n";
+	//std::cout << "2 clear\n";
 
 	index_cnt = indices.size();
 
@@ -578,7 +517,7 @@ void openglcode::draw_sphere() {
 			data.push_back(uv[i].y);
 		}
 	}
-	std::cout << "3 clear\n";
+	//std::cout << "3 clear\n";
 
 	unsigned int stride = (3 + 2 + 3) * sizeof(float);
 	glBindVertexArray(sphere_vao);
@@ -890,32 +829,28 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void openglcode::process_input(GLFWwindow* window) {
-	float camera_speed = 2.5f * delta_time;
-
 	//커서 안보이게 하고 창화면에 가둠
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
 
 	//대각선 이동이 가능하도록 하기 위해 전부 if로
 	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-		camera_pos.z += camera_speed * camera_front.z;
-		camera_pos.x += camera_speed * camera_front.x;
+		camera.process_keyboard(FORWARD, delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-		camera_pos.z -= camera_speed * camera_front.z;
-		camera_pos.x -= camera_speed * camera_front.x;
+		camera.process_keyboard(BACKWARD, delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-		camera_pos -= glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+		camera.process_keyboard(LEFT, delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-		camera_pos += glm::normalize(glm::cross(camera_front, camera_up)) * camera_speed;
+		camera.process_keyboard(RIGHT, delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_SPACE) == GLFW_PRESS) {
-		camera_pos.y += camera_speed;
+		camera.process_keyboard(UP, delta_time);
 	}
 	if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS) {
-		camera_pos.y -= camera_speed;
+		camera.process_keyboard(DOWN, delta_time);
 	}
 
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
@@ -925,48 +860,24 @@ void openglcode::process_input(GLFWwindow* window) {
 }
 
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
+	float x = (float)x_pos;
+	float y = (float)y_pos;
+
 	if (first_mouse) {
 		last_x = x_pos;
 		last_y = y_pos;
 
 		first_mouse = false;
 	}
+	float x_offset = x - last_x;
+	float y_offset = last_y - y;
 
-	glm::vec3 front;
-	float x_offset = x_pos - last_x;
-	float y_offset = last_y - y_pos;
+	last_x = x;
+	last_y = y;
 
-	last_x = x_pos;
-	last_y = y_pos;
-
-	x_offset *= sensivity;
-	y_offset *= sensivity;
-
-	yaw += x_offset;
-	pitch += y_offset;
-
-	//y축 카메라 시점 제한
-	if (pitch > 89.0f) {
-		pitch = 89.0f;
-	}
-	else if (pitch < -89.0f) {
-		pitch = -89.0f;
-	}
-
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = sin(glm::radians(pitch));
-	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	camera_front = glm::normalize(front);
+	camera.process_mouse_movement(x_offset, y_offset);
 }
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
-	if (fov >= 1.0f && fov <= 45.0f) {
-		fov -= y_offset;
-	}
-	else if (fov <= 1.0f) {
-		fov = 1.0f;
-	}
-	else if (fov >= 45.0f) {
-		fov = 45.0f;
-	}
+	camera.process_mouse_scroll((float)y_offset);
 }
