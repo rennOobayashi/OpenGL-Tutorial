@@ -9,15 +9,19 @@ void Camera::process_keyboard(camera_movement direction, float delta_time) {
 
 	if (direction == FORWARD) {
 		position += front * speed;
+		position.y = 0.0f;
 	}
 	if (direction == BACKWARD) {
 		position -= front * speed;
+		position.y = 0.0f;
 	}
 	if (direction == LEFT) {
 		position -= right * speed;
+		position.y = 0.0f;
 	}
 	if (direction == RIGHT) {
 		position += right * speed;
+		position.y = 0.0f;
 	}
 	if (direction == UP) {
 		position += up * speed;
