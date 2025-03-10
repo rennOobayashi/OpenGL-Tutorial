@@ -1,1 +1,2 @@
 C:\Users\inhee\source\repos\Opengl_Tut\Opengl_Tut\x64\Debug\Opengl_Tut.exe
+C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\x64\Debug\Opengl_Tut.exe
