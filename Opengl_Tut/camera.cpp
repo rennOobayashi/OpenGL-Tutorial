@@ -7,6 +7,22 @@ glm::mat4 Camera::get_view_matrix() {
 void Camera::process_keyboard(camera_movement direction, float delta_time) {
 	float speed = movement_speed * delta_time;
 
+	if (front.x < 0.01f && front.x > 0) {
+		front.x = 0.01f;
+	}
+	else if (front.x > -0.01f && front.x < 0) {
+		front.x = -0.01f;
+	}
+
+	if (front.z < 0.01f && front.z > 0) {
+		front.x = 0.01f;
+	}
+	else if (front.z > -0.01f && front.z < 0) {
+		front.z = -0.01f;
+	}
+
+	std::cout << front.x << " " << front.y << " " << front.z << std::endl;
+
 	if (direction == FORWARD) {
 		position.x += front.x * speed;
 		position.z += front.z * speed;
