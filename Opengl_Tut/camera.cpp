@@ -8,20 +8,18 @@ void Camera::process_keyboard(camera_movement direction, float delta_time) {
 	float speed = movement_speed * delta_time;
 
 	if (direction == FORWARD) {
-		position += front * speed;
-		position.y = 0.0f;
+		position.x += front.x * speed;
+		position.z += front.z * speed;
 	}
 	if (direction == BACKWARD) {
-		position -= front * speed;
-		position.y = 0.0f;
+		position.x -= front.x * speed;
+		position.z -= front.z * speed;
 	}
 	if (direction == LEFT) {
 		position -= right * speed;
-		position.y = 0.0f;
 	}
 	if (direction == RIGHT) {
 		position += right * speed;
-		position.y = 0.0f;
 	}
 	if (direction == UP) {
 		position += up * speed;
@@ -65,7 +63,7 @@ void Camera::update_camera_vectors() {
 	glm::vec3 front;
 
 	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front.y = 0;
+	front.y = sin(glm::radians(pitch));
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	this->front = glm::normalize(front);
 
