@@ -29,7 +29,9 @@ private:
 public:
 	//camera attributes
 	glm::vec3 position;
-	glm::vec3 front;
+	//for movement like in fps games, the camera front and movement front were separated
+	glm::vec3 camera_front;
+	glm::vec3 movement_front;
 	glm::vec3 up;
 	glm::vec3 right;
 	glm::vec3 world_up;
@@ -41,7 +43,7 @@ public:
 	float mouse_sensivity;
 	float fov;
 
-	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), mouse_sensivity(SENSITIVITY), fov(FOV) {
+	Camera(glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f), float yaw = YAW, float pitch = PITCH) : camera_front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), mouse_sensivity(SENSITIVITY), fov(FOV) {
 		this->position = position;
 		this->world_up = up;
 		this->yaw = yaw;
@@ -49,7 +51,7 @@ public:
 		update_camera_vectors();
 	}
 
-	Camera(float pos_x, float pos_y, float pos_z, float up_x, float up_y, float up_z, float yaw = YAW, float pitch = PITCH) : front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), mouse_sensivity(SENSITIVITY), fov(FOV) {
+	Camera(float pos_x, float pos_y, float pos_z, float up_x, float up_y, float up_z, float yaw = YAW, float pitch = PITCH) : camera_front(glm::vec3(0.0f, 0.0f, -1.0f)), movement_speed(SPEED), mouse_sensivity(SENSITIVITY), fov(FOV) {
 		position = glm::vec3(pos_x, pos_y, pos_z);
 		world_up = glm::vec3(up_x, up_y, up_z);
 		this->yaw = yaw;
