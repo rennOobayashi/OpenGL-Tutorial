@@ -30,6 +30,7 @@ private:
 	unsigned int capture_fbo, capture_rbo;
 	unsigned int env_cubemap;
 	unsigned int irradiance_map;
+	unsigned int prefilter_map;
 	unsigned int sphere_vao, eao, ebo;
 	unsigned int index_cnt;
 	char info_log[512];
