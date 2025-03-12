@@ -46,7 +46,7 @@ private:
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_sphere();
-	void draw_skybox(Shader hdr_shader, Shader irradiance_shader);
+	void draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader);
 	void framebuffer();
 	void hdrbuffer();
 	void depth_cubemap();

@@ -82,6 +82,7 @@ void openglcode::set_n_run() {
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
 	Shader irradiance_shader("geofragver/cubemap_vertex.vs", "geofragver/irradiance_fragment.fs");
+	Shader prefilter_shader("geofragver/cubemap_vertex.vs", "geofragver/hammersley_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
 	draw_square();
 	draw_sphere();
@@ -120,7 +121,8 @@ void openglcode::set_n_run() {
 	background_shader.use();
 	shader.set_int("envronment_map", 0);
 
-	draw_skybox(hdr_shader, irradiance_shader);
+
+	draw_skybox(hdr_shader, irradiance_shader, prefilter_shader);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -256,7 +258,7 @@ unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
 	return texture_id;
 }
 
-void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
+void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader) {
 	glGenFramebuffers(1, &capture_fbo);
 	glGenRenderbuffers(1, &capture_rbo);
 
@@ -355,9 +357,6 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glViewport(0, 0, X, Y);
 
 	glGenTextures(1, &prefilter_map);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map);
@@ -373,6 +372,42 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	prefilter_shader.use();
+	prefilter_shader.set_int("envronment_map", 0);
+	prefilter_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	unsigned int max_mip_levels = 5;
+
+	for (unsigned int mip = 0; mip < max_mip_levels; mip++) {
+		unsigned int mip_width = 128 * std::pow(0.5, mip);
+		unsigned int mip_height = 128 * std::pow(0.5, mip);
+
+		glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mip_width, mip_height);
+		glViewport(0, 0, mip_width, mip_height);
+
+		float roughness = (float)mip / (float)(max_mip_levels - 1);
+		prefilter_shader.set_float("roughness", roughness);
+
+		for (unsigned int i = 0; i < 6; i++) {
+			prefilter_shader.set_mat4("view", capture_views[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilter_map, mip);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindVertexArray(vao);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glViewport(0, 0, X, Y);
 }
 
 void openglcode::draw_square() {
