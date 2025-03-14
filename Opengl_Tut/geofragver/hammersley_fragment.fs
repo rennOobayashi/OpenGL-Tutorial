@@ -8,6 +8,7 @@ uniform samplerCube environment_map;
 uniform float roughness;
 
 float van_der_corput(uint n, uint base);
+float distribution_ggx(float n_dot_h, float roughness);
 vec2 hammersley(uint i, uint n);
 vec3 importance_sample_ggx(vec2 xi, vec3 n, float roughness);
 
@@ -27,7 +28,19 @@ void main() {
         float n_dot_l = max(dot(n, l), 0.0);
 
         if (n_dot_l > 0.0) {
-            prefilterd_color += texture(environment_map, l).rgb * n_dot_l;
+            float n_dot_h = max(dot(n, h), 0.0);
+            float h_dot_v = max(dot(h, v), 0.0);
+
+            float d = distribution_ggx(n_dot_h, roughness);
+            float pdf = (d * n_dot_h / (4.0 * h_dot_v)) + 0.0001;
+
+            float resolution = 512.0;
+            float sa_texel = 4.0 * pi / (6.0 * resolution * resolution);
+            float sa_sample = 1.0 / (float(sample_cnt) * pdf + 0.0001);
+
+            float mip_level = roughness == 0.0 ? 0.0 : 0.5 * log2(sa_sample / sa_texel);
+
+            prefilterd_color += textureLod(environment_map, l, mip_level).rgb * n_dot_l;
             total_weight += n_dot_l;
         }
     }
@@ -62,7 +75,7 @@ vec3 importance_sample_ggx(vec2 xi, vec3 n, float roughness) {
     float a = roughness * roughness;
 
     float phi = 2.0 * pi * xi.x;
-    float costheta = sqrt(1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y);
+    float costheta = sqrt((1.0 - xi.y) / (1.0 + (a * a - 1.0) * xi.y));
     float sintheta = sqrt(1.0 - costheta * costheta);
 
     vec3 h;
@@ -77,4 +90,16 @@ vec3 importance_sample_ggx(vec2 xi, vec3 n, float roughness) {
     vec3 sample_vec = tangent * h.x + bitangent * h.y + n * h.z;
 
     return normalize(sample_vec);
+}
+
+float distribution_ggx(float n_dot_h, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float n_dot_h2 = n_dot_h * n_dot_h;
+
+    float nom = a2;
+    float denom = (n_dot_h2 * (a2 - 1.0) + 1.0);
+    denom = pi * denom * denom;
+
+    return nom / denom;
 }

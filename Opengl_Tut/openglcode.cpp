@@ -4,14 +4,6 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
 
-glm::mat4 capture_views[] = {
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-};
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float last_x = X / 2.0f;
 float last_y = Y / 2.0f;
@@ -78,11 +70,14 @@ void openglcode::set_n_run() {
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	//appropriately filters cubemap faces
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
 	Shader irradiance_shader("geofragver/cubemap_vertex.vs", "geofragver/irradiance_fragment.fs");
 	Shader prefilter_shader("geofragver/cubemap_vertex.vs", "geofragver/hammersley_fragment.fs");
+	Shader brdf_shader("geofragver/brdf_vertex.vs", "geofragver/brdf_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
 	draw_square();
 	draw_sphere();
@@ -122,7 +117,11 @@ void openglcode::set_n_run() {
 	shader.set_int("envronment_map", 0);
 
 
-	draw_skybox(hdr_shader, irradiance_shader, prefilter_shader);
+	draw_skybox(hdr_shader, irradiance_shader, prefilter_shader, brdf_shader);
+	
+	int scr_width, scr_height;	
+	glfwGetFramebufferSize(window, &scr_width, &scr_height);
+	glViewport(0, 0, scr_width, scr_height);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -137,14 +136,15 @@ void openglcode::set_n_run() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//std::cout << camera.fov << std::endl;
-		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
 		glm::mat4 view = camera.get_view_matrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
 		shader.use();
-		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
+		shader.set_mat4("projection", projection);
 		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
+
 		glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, albedo_tex);
 		glActiveTexture(GL_TEXTURE2);
@@ -193,8 +193,8 @@ void openglcode::set_n_run() {
 		}
 
 		background_shader.use();
-		background_shader.set_mat4("projection", projection);
 		background_shader.set_mat4("view", view);
+		background_shader.set_mat4("projection", projection);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
 		glBindVertexArray(vao);
@@ -209,9 +209,16 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &sphere_vao);
 	glDeleteBuffers(1, &eao);
 	glDeleteBuffers(1, &ebo);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteFramebuffers(1, &capture_fbo);
+	glDeleteRenderbuffers(1, color_buffer);
+	glDeleteRenderbuffers(1, &capture_rbo);
 	glDeleteProgram(shader.id);
 	glDeleteProgram(hdr_shader.id);
 	glDeleteProgram(background_shader.id);
+	glDeleteProgram(irradiance_shader.id);
+	glDeleteProgram(brdf_shader.id);
+	glDeleteProgram(prefilter_shader.id);
 
 	glfwTerminate();
 
@@ -258,7 +265,16 @@ unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
 	return texture_id;
 }
 
-void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader) {
+void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader, Shader brdf_shader) {
+	glm::mat4 capture_views[] = {
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
+
 	glGenFramebuffers(1, &capture_fbo);
 	glGenRenderbuffers(1, &capture_rbo);
 
@@ -269,7 +285,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, color_ch;
-	float* data = stbi_loadf("texture/autumn_field_puresky_4k.hdr", &width, &height, &color_ch, 0);
+	float* data = stbi_loadf("texture/fhd_skybox.hdr", &width, &height, &color_ch, 0);
 
 	if (data) {
 		glGenTextures(1, &hdr_texture);
@@ -298,7 +314,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -321,6 +337,9 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 		glBindVertexArray(0);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
 	glGenTextures(1, &irradiance_map);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map);
@@ -357,7 +376,8 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
 	}
-
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
 	glGenTextures(1, &prefilter_map);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map);
 
@@ -407,7 +427,29 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
-	glViewport(0, 0, X, Y);
+	glGenTextures(1, &brdf_texture);
+	glBindTexture(GL_TEXTURE_2D, brdf_texture);
+	//use 16 bit precision floating format
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F,  512, 512, 0, GL_RGB, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_texture, 0);
+	
+	glViewport(0, 0, 512, 512);
+	brdf_shader.use();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glBindVertexArray(qao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void openglcode::draw_square() {

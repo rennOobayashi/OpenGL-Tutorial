@@ -6,6 +6,7 @@ in vec3 normal;
 in vec2 texcoords;
 
 uniform samplerCube irradiance_map;
+uniform samplerCube prefilter_map;
 
 uniform vec3 cam_pos;
 
@@ -70,8 +71,10 @@ void main()
 
     vec3 ks = fresnel_schlick_roughness(max(dot(n, v), 0.0), fo, roughness);
     vec3 kd = 1.0 - ks;
+
     vec3 irradiance = texture(irradiance_map, n).rgb;
     vec3 diffuse = irradiance * albedo;
+
     vec3 ambient = (kd * diffuse) * ao;
     vec3 color = ambient + lo;
 

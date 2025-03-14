@@ -31,6 +31,7 @@ private:
 	unsigned int env_cubemap;
 	unsigned int irradiance_map;
 	unsigned int prefilter_map;
+	unsigned int brdf_texture;
 	unsigned int sphere_vao, eao, ebo;
 	unsigned int index_cnt;
 	char info_log[512];
@@ -46,7 +47,7 @@ private:
 	void process_input(GLFWwindow* window);
 	void draw_square();
 	void draw_sphere();
-	void draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader);
+	void draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader, Shader brdf_shader);
 	void framebuffer();
 	void hdrbuffer();
 	void depth_cubemap();
