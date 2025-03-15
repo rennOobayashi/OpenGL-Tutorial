@@ -107,11 +107,13 @@ void openglcode::set_n_run() {
 
 	shader.use();
 	shader.set_int("irradiance_map", 0);
-	shader.set_int("albedo_map", 1);
-	shader.set_int("normal_map", 2);
-	shader.set_int("metallic_map", 3);
-	shader.set_int("roughness_map", 4);
-	shader.set_int("ao_map", 5);
+	shader.set_int("prefilter_map", 1);
+	shader.set_int("brdf_lut", 2);
+	shader.set_int("albedo_map", 3);
+	shader.set_int("normal_map", 4);
+	shader.set_int("metallic_map", 5);
+	shader.set_int("roughness_map", 6);
+	shader.set_int("ao_map", 7);
 
 	background_shader.use();
 	shader.set_int("envronment_map", 0);
@@ -144,16 +146,20 @@ void openglcode::set_n_run() {
 		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
-
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, albedo_tex);
+		glBindTexture(GL_TEXTURE_2D, prefilter_map);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, nor_tex);
+		glBindTexture(GL_TEXTURE_2D, brdf_texture);
+
 		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, metal_tex);
+		glBindTexture(GL_TEXTURE_2D, albedo_tex);
 		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glBindTexture(GL_TEXTURE_2D, nor_tex);
 		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, metal_tex);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, ao_tex);
 
 		glm::mat4 model = glm::mat4(1.0f);

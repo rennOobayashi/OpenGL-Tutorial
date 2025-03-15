@@ -7,6 +7,7 @@ in vec2 texcoords;
 
 uniform samplerCube irradiance_map;
 uniform samplerCube prefilter_map;
+uniform sampler2D brdf_lut;
 
 uniform vec3 cam_pos;
 
@@ -51,7 +52,7 @@ void main()
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = light_colors[i] * attenuation;
 
-        vec3 f = fresnel_schlick(clamp(dot(h, v), 0.0, 1.0), fo);
+        vec3 f = fresnel_schlick(max(dot(h, v), 0.0), fo);
         float ndf = distributionggx(n, h, roughness);
         float g = gemoetry_smith(n, v, l, roughness);
 
@@ -69,13 +70,21 @@ void main()
         lo += (kd * albedo / pi + specular) * radiance * ndotl;
     }
 
-    vec3 ks = fresnel_schlick_roughness(max(dot(n, v), 0.0), fo, roughness);
+    vec3 f = fresnel_schlick_roughness(max(dot(n, v), 0.0), fo, roughness);
+
+    vec3 ks = f;
     vec3 kd = 1.0 - ks;
+    kd *= 1.0 - metallic;
 
     vec3 irradiance = texture(irradiance_map, n).rgb;
     vec3 diffuse = irradiance * albedo;
 
-    vec3 ambient = (kd * diffuse) * ao;
+    const float max_reflection_lod = 4.0;
+    vec3 prefiltered_color = textureLod(prefilter_map, r, roughness * max_reflection_lod).rgb;
+    vec2 env_brfd = texture(brdf_lut, vec2(max(dot(n, v), 0.0), roughness)).rg;
+    vec3 specular = prefiltered_color * (f * env_brfd.x + env_brfd.y);
+
+    vec3 ambient = (kd * diffuse + specular) * ao;
     vec3 color = ambient + lo;
 
     //감마 보정
