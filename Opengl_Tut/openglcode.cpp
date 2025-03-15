@@ -79,6 +79,8 @@ void openglcode::set_n_run() {
 	Shader prefilter_shader("geofragver/cubemap_vertex.vs", "geofragver/hammersley_fragment.fs");
 	Shader brdf_shader("geofragver/brdf_vertex.vs", "geofragver/brdf_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
+	Model rock_model("model/rock/rock.obj");
+	
 	draw_square();
 	draw_sphere();
 
@@ -140,9 +142,11 @@ void openglcode::set_n_run() {
 		//std::cout << camera.fov << std::endl;
 		glm::mat4 view = camera.get_view_matrix();
 		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
+		glm::mat4 model = glm::mat4(1.0f);
 		shader.use();
 		shader.set_mat4("view", view);
 		shader.set_mat4("projection", projection);
+		shader.set_mat4("model", model);
 		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
@@ -161,10 +165,9 @@ void openglcode::set_n_run() {
 		glBindTexture(GL_TEXTURE_2D, rough_tex);
 		glActiveTexture(GL_TEXTURE7);
 		glBindTexture(GL_TEXTURE_2D, ao_tex);
+		rock_model.draw(shader);
 
-		glm::mat4 model = glm::mat4(1.0f);
-
-		for (int i = 0; i < nr_rows; i++) {
+		/*for (int i = 0; i < nr_rows; i++) {
 			for (int j = 0; j < nr_columns; j++) {
 				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
 				
@@ -196,7 +199,9 @@ void openglcode::set_n_run() {
 			glBindVertexArray(sphere_vao);
 			glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
-		}
+		}*/
+
+
 
 		background_shader.use();
 		background_shader.set_mat4("view", view);
