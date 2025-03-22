@@ -59,4 +59,5 @@ private:
 public:
 	void init();
 	void set_n_run();
+	GLenum gl_check_error(const char *file, int line);
 };
