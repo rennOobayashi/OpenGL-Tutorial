@@ -9,6 +9,41 @@ float last_x = X / 2.0f;
 float last_y = Y / 2.0f;
 bool first_mouse = true;
 
+GLenum openglcode::_gl_check_error(const char* file, int line) {
+	GLenum error_code;
+
+	while ((error_code = glGetError()) != GL_NO_ERROR) {
+		std::string error;
+
+		switch (error_code) {
+		case GL_INVALID_ENUM:
+			error = "INVALID_ENUM";
+			break;
+		case GL_INVALID_VALUE:
+			error = "INALID_VALUE";
+			break;
+		case GL_INVALID_OPERATION:
+			error = "INVALID_OPERATION";
+			break;
+		case GL_STACK_OVERFLOW:
+			error = "STACK_OVERFLOW";
+			break;
+		case GL_STACK_UNDERFLOW:
+			error = "STACK_UNDERFLOW";
+			break;
+		case GL_OUT_OF_MEMORY:
+			error = "OUT_OF_MEMORY";
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			error = "INVALID_FRAMEBUFFER_OPERATION";
+			break;
+		}
+		std::cout << error << " | " << file << " ( " << line << " ) " << std::endl;
+	}
+
+	return error_code;
+}
+
 float lerp(float x, float y, float z) {
 	return x + z * (y - x);
 }
@@ -45,6 +80,7 @@ void openglcode::set_n_run() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -291,7 +327,6 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 
 	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
 	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
-	gl_check_error(__FILE__, __LINE__);
 	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, capture_rbo);
 
@@ -318,6 +353,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 
 	glGenTextures(1, &env_cubemap);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+	//gl_check_error();
 
 	for (unsigned int i = 0; i < 6; i++)
 	{
@@ -984,39 +1020,4 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
 	camera.process_mouse_scroll((float)y_offset);
-}
-
-GLenum openglcode::gl_check_error(const char* file, int line) {
-	GLenum error_code;
-
-	while ((error_code = glGetError()) != GL_NO_ERROR) {
-		std::string error;
-
-		switch (error_code) {
-			case GL_INVALID_ENUM: 
-				error = "INVALID_ENUM";
-				break;
-			case GL_INVALID_VALUE:
-				error = "INALID_VALUE";
-				break;
-			case GL_INVALID_OPERATION:
-				error = "INVALID_OPERATION";
-				break;
-			case GL_STACK_OVERFLOW:
-				error = "STACK_OVERFLOW";
-				break;
-			case GL_STACK_UNDERFLOW:
-				error = "STACK_UNDERFLOW";
-				break;
-			case GL_OUT_OF_MEMORY:
-				error = "OUT_OF_MEMORY";
-				break;
-			case GL_INVALID_FRAMEBUFFER_OPERATION:
-				error = "INVALID_FRAMEBUFFER_OPERATION";
-				break;
-		}
-		std::cout << error << " | " << file << " ( " << line << " ) " << std::endl;
-	}
-
-	return error_code;
 }

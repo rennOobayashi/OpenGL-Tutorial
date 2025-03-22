@@ -15,6 +15,7 @@
 #include <vector>
 #define X 1280
 #define Y 720
+#define gl_check_error() _gl_check_error(__FILE__, __LINE__)
 
 class openglcode
 {
@@ -56,8 +57,8 @@ private:
 	void render_scene(const Shader &shader);
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
+	GLenum _gl_check_error(const char* file, int line);
 public:
 	void init();
 	void set_n_run();
-	GLenum gl_check_error(const char *file, int line);
 };
