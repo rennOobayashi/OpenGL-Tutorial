@@ -46,6 +46,7 @@ void openglcode::set_n_run() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 8);
 	//It is recommended to remove this request hint when releasing,
 	//as it may slow down the speed compared to the context.
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
@@ -82,6 +83,10 @@ void openglcode::set_n_run() {
 		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 		glDebugMessageCallback(gl_debug_output, nullptr);
 		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		//Only high severity error messages print
+		//glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+		//Custom error message
+		//glDebugMessageInsert(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1, "Error message here");
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -162,7 +167,6 @@ void openglcode::set_n_run() {
 		shader.use();
 		shader.set_mat4("view", view);
 		shader.set_mat4("projection", projection);
-		shader.set_mat4("model", model);
 		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
@@ -184,6 +188,7 @@ void openglcode::set_n_run() {
 		//rock_model.draw(shader);
 
 		for (int i = 0; i < nr_rows; i++) {
+			shader.set_float("metallic", (float)i / (float)nr_rows);
 			for (int j = 0; j < nr_columns; j++) {
 				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
 				
@@ -202,7 +207,7 @@ void openglcode::set_n_run() {
 		}
 
 		for (unsigned int i = 0; i < sizeof(light_positions) / sizeof(light_positions[0]); i++) {
-			glm::vec3 new_pos = light_positions[i];
+			glm::vec3 new_pos = light_positions[i] + glm::vec3(sin(glfwGetTime() * 5.0f) * 5.0f, 0.0f, 0.0f);
 			shader.set_vec3("light_positions[" + std::to_string(i) + "]", new_pos);
 			shader.set_vec3("light_colors[" + std::to_string(i) + "]", light_colors[i]);
 
@@ -227,6 +232,12 @@ void openglcode::set_n_run() {
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		//brdf map print to screen
+		//brdf_shader.use();
+		//glBindVertexArray(qao);
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		//glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -417,7 +428,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
