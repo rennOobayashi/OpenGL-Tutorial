@@ -39,6 +39,7 @@ private:
 	unsigned int texture1, texture2;
 	unsigned int albedo_tex, metal_tex, nor_tex, rough_tex, ao_tex, hdr_texture;
 	unsigned int cubemap_texture;
+	int flags;
 	unsigned char* data;
 	float delta_time;
 	float last_frame;

@@ -3,46 +3,12 @@
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
+void gl_debug_output(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param);
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float last_x = X / 2.0f;
 float last_y = Y / 2.0f;
 bool first_mouse = true;
-
-GLenum openglcode::_gl_check_error(const char* file, int line) {
-	GLenum error_code;
-
-	while ((error_code = glGetError()) != GL_NO_ERROR) {
-		std::string error;
-
-		switch (error_code) {
-		case GL_INVALID_ENUM:
-			error = "INVALID_ENUM";
-			break;
-		case GL_INVALID_VALUE:
-			error = "INALID_VALUE";
-			break;
-		case GL_INVALID_OPERATION:
-			error = "INVALID_OPERATION";
-			break;
-		case GL_STACK_OVERFLOW:
-			error = "STACK_OVERFLOW";
-			break;
-		case GL_STACK_UNDERFLOW:
-			error = "STACK_UNDERFLOW";
-			break;
-		case GL_OUT_OF_MEMORY:
-			error = "OUT_OF_MEMORY";
-			break;
-		case GL_INVALID_FRAMEBUFFER_OPERATION:
-			error = "INVALID_FRAMEBUFFER_OPERATION";
-			break;
-		}
-		std::cout << error << " | " << file << " ( " << line << " ) " << std::endl;
-	}
-
-	return error_code;
-}
 
 float lerp(float x, float y, float z) {
 	return x + z * (y - x);
@@ -77,14 +43,17 @@ void openglcode::set_n_run() {
 		glm::vec3(7.2f, -5.5f, 7.1f)
 	};
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	//It is recommended to remove this request hint when releasing,
+	//as it may slow down the speed compared to the context.
 	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+
 
 	window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
 	if (window == NULL) {
@@ -102,6 +71,17 @@ void openglcode::set_n_run() {
 		std::cout << "Failed to initialize GLAD" << std::endl;
 
 		return;
+	}
+	
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+
+	if (flags && GL_CONTEXT_FLAG_DEBUG_BIT) {
+		glEnable(GL_DEBUG_OUTPUT);
+		//Tell OpenGL to print debug output
+		//and call a callback function when an error occurs
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(gl_debug_output, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
 	}
 
 	glEnable(GL_DEPTH_TEST);
@@ -1020,4 +1000,107 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
 	camera.process_mouse_scroll((float)y_offset);
+}
+/*
+GLenum openglcode::_gl_check_error(const char* file, int line) {
+	GLenum error_code;
+
+	while ((error_code = glGetError()) != GL_NO_ERROR) {
+		std::string error;
+
+		switch (error_code) {
+		case GL_INVALID_ENUM:
+			error = "INVALID_ENUM";
+			break;
+		case GL_INVALID_VALUE:
+			error = "INALID_VALUE";
+			break;
+		case GL_INVALID_OPERATION:
+			error = "INVALID_OPERATION";
+			break;
+		case GL_STACK_OVERFLOW:
+			error = "STACK_OVERFLOW";
+			break;
+		case GL_STACK_UNDERFLOW:
+			error = "STACK_UNDERFLOW";
+			break;
+		case GL_OUT_OF_MEMORY:
+			error = "OUT_OF_MEMORY";
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			error = "INVALID_FRAMEBUFFER_OPERATION";
+			break;
+		default:
+			error = "UNKNOWN_ERROR";
+		}
+		std::cout << error << " | " << file << " ( " << line << " ) " << std::endl;
+	}
+
+	return error_code;
+}
+*/
+void APIENTRY gl_debug_output(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* message, const void* user_param) {
+	if (id == 131169 || id == 131218 || id == 131204) {
+		return;
+	}
+
+	std::cout << "=================" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+	switch (source) {
+	case GL_DEBUG_SOURCE_API: std::cout << "Source: API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM: std::cout << "Source: Window system";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Source: Third party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Source: Application";
+		break;
+	case GL_DEBUG_SOURCE_OTHER: std::cout << "Source: Other";
+		break;
+	default:
+		std::cout << "Source: Unknown";
+	}
+	std::cout << std::endl;
+
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR: std::cout << "Type: Error";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Depreacted behavior";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "Type: Undefined behavior";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY: std::cout << "Type: Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "Type: Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER: std::cout << "Type: Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP: std::cout << "Type: Push group";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP: std::cout << "Type: Pop group";
+		break;
+	case GL_DEBUG_TYPE_OTHER: std::cout << "Type: Other";
+		break;
+	default:
+		std::cout << "Type: Unknown";
+	}
+	std::cout << std::endl;
+
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_HIGH: std::cout << "Severity: HIGH";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "Severity: Medium";
+		break;
+	case GL_DEBUG_SEVERITY_LOW: std::cout << "Severity: Low";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: Notification";
+		break;
+	default:
+		std::cout << "Severity: Unknown";
+	}
+
+	std::cout << std::endl << std::endl;
 }
