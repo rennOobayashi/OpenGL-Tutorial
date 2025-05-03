@@ -1,4 +1,6 @@
 It's only for study OpenGL.
+大学の開講により更新が遅れることがあります。
+Updates may be delayed due to university course openings.
 
 12/9
 My heart feels VOID, but I don't know why.

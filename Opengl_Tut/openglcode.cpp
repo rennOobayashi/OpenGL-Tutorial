@@ -3,15 +3,8 @@
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
+void gl_debug_output(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param);
 
-glm::mat4 capture_views[] = {
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
-	glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
-};
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float last_x = X / 2.0f;
 float last_y = Y / 2.0f;
@@ -50,13 +43,18 @@ void openglcode::set_n_run() {
 		glm::vec3(7.2f, -5.5f, 7.1f)
 	};
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_SAMPLES, 8);
+	//It is recommended to remove this request hint when releasing,
+	//as it may slow down the speed compared to the context.
+	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+
 
 	window = glfwCreateWindow(X, Y, "Learn OpenGL", nullptr, nullptr);
 	if (window == NULL) {
@@ -75,14 +73,35 @@ void openglcode::set_n_run() {
 
 		return;
 	}
+	
+	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+
+	if (flags && GL_CONTEXT_FLAG_DEBUG_BIT) {
+		glEnable(GL_DEBUG_OUTPUT);
+		//Tell OpenGL to print debug output
+		//and call a callback function when an error occurs
+		glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+		glDebugMessageCallback(gl_debug_output, nullptr);
+		glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DONT_CARE, 0, nullptr, GL_TRUE);
+		//Only high severity error messages print
+		//glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
+		//Custom error message
+		//glDebugMessageInsert(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1, "Error message here");
+	}
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
+	//appropriately filters cubemap faces
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
 	Shader irradiance_shader("geofragver/cubemap_vertex.vs", "geofragver/irradiance_fragment.fs");
+	Shader prefilter_shader("geofragver/cubemap_vertex.vs", "geofragver/hammersley_fragment.fs");
+	Shader brdf_shader("geofragver/brdf_vertex.vs", "geofragver/brdf_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
+	//Model rock_model("model/rock/rock.obj");
+	
 	draw_square();
 	draw_sphere();
 
@@ -111,29 +130,23 @@ void openglcode::set_n_run() {
 
 	shader.use();
 	shader.set_int("irradiance_map", 0);
-	shader.set_int("albedo_map", 1);
-	shader.set_int("normal_map", 2);
-	shader.set_int("metallic_map", 3);
-	shader.set_int("roughness_map", 4);
-	shader.set_int("ao_map", 5);
+	shader.set_int("prefilter_map", 1);
+	shader.set_int("brdf_lut", 2);
+	shader.set_int("albedo_map", 3);
+	shader.set_int("normal_map", 4);
+	shader.set_int("metallic_map", 5);
+	shader.set_int("roughness_map", 6);
+	shader.set_int("ao_map", 7);
 
 	background_shader.use();
 	shader.set_int("envronment_map", 0);
 
-	draw_skybox(hdr_shader, irradiance_shader);
 
-	for (unsigned int i = 0; i < 6; i++) {
-		irradiance_shader.set_mat4("view", capture_views[i]);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_map, 0);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		glBindVertexArray(vao);
-		glDrawArrays(GL_TRIANGLES, 0, 36);
-		glBindVertexArray(0);
-	}
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-	glViewport(0, 0, X, Y);
+	draw_skybox(hdr_shader, irradiance_shader, prefilter_shader, brdf_shader);
+	
+	int scr_width, scr_height;	
+	glfwGetFramebufferSize(window, &scr_width, &scr_height);
+	glViewport(0, 0, scr_width, scr_height);
 
 	while (!glfwWindowShouldClose(window)) {
 		float current_frame = (float)glfwGetTime();
@@ -148,28 +161,34 @@ void openglcode::set_n_run() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		//std::cout << camera.fov << std::endl;
-		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
 		glm::mat4 view = camera.get_view_matrix();
+		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
+		glm::mat4 model = glm::mat4(1.0f);
 		shader.use();
-		shader.set_mat4("projection", projection);
 		shader.set_mat4("view", view);
+		shader.set_mat4("projection", projection);
 		shader.set_vec3("cam_pos", camera.position);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, irradiance_map);
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, albedo_tex);
+		glBindTexture(GL_TEXTURE_2D, prefilter_map);
 		glActiveTexture(GL_TEXTURE2);
-		glBindTexture(GL_TEXTURE_2D, nor_tex);
-		glActiveTexture(GL_TEXTURE3);
-		glBindTexture(GL_TEXTURE_2D, metal_tex);
-		glActiveTexture(GL_TEXTURE4);
-		glBindTexture(GL_TEXTURE_2D, rough_tex);
-		glActiveTexture(GL_TEXTURE5);
-		glBindTexture(GL_TEXTURE_2D, ao_tex);
+		glBindTexture(GL_TEXTURE_2D, brdf_texture);
 
-		glm::mat4 model = glm::mat4(1.0f);
+		glActiveTexture(GL_TEXTURE3);
+		glBindTexture(GL_TEXTURE_2D, albedo_tex);
+		glActiveTexture(GL_TEXTURE4);
+		glBindTexture(GL_TEXTURE_2D, nor_tex);
+		glActiveTexture(GL_TEXTURE5);
+		glBindTexture(GL_TEXTURE_2D, metal_tex);
+		glActiveTexture(GL_TEXTURE6);
+		glBindTexture(GL_TEXTURE_2D, rough_tex);
+		glActiveTexture(GL_TEXTURE7);
+		glBindTexture(GL_TEXTURE_2D, ao_tex);
+		//rock_model.draw(shader);
 
 		for (int i = 0; i < nr_rows; i++) {
+			shader.set_float("metallic", (float)i / (float)nr_rows);
 			for (int j = 0; j < nr_columns; j++) {
 				shader.set_float("roughness", glm::clamp((float)j / (float)nr_columns, 0.05f, 1.0f));
 				
@@ -188,7 +207,7 @@ void openglcode::set_n_run() {
 		}
 
 		for (unsigned int i = 0; i < sizeof(light_positions) / sizeof(light_positions[0]); i++) {
-			glm::vec3 new_pos = light_positions[i];
+			glm::vec3 new_pos = light_positions[i] + glm::vec3(sin(glfwGetTime() * 5.0f) * 5.0f, 0.0f, 0.0f);
 			shader.set_vec3("light_positions[" + std::to_string(i) + "]", new_pos);
 			shader.set_vec3("light_colors[" + std::to_string(i) + "]", light_colors[i]);
 
@@ -203,14 +222,22 @@ void openglcode::set_n_run() {
 			glBindVertexArray(0);
 		}
 
+
+
 		background_shader.use();
-		background_shader.set_mat4("projection", projection);
 		background_shader.set_mat4("view", view);
+		background_shader.set_mat4("projection", projection);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
 		glBindVertexArray(vao);
 		glDrawArrays(GL_TRIANGLES, 0, 36);
 		glBindVertexArray(0);
+
+		//brdf map print to screen
+		//brdf_shader.use();
+		//glBindVertexArray(qao);
+		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+		//glBindVertexArray(0);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -220,9 +247,16 @@ void openglcode::set_n_run() {
 	glDeleteVertexArrays(1, &sphere_vao);
 	glDeleteBuffers(1, &eao);
 	glDeleteBuffers(1, &ebo);
+	glDeleteFramebuffers(1, &fbo);
+	glDeleteFramebuffers(1, &capture_fbo);
+	glDeleteRenderbuffers(1, color_buffer);
+	glDeleteRenderbuffers(1, &capture_rbo);
 	glDeleteProgram(shader.id);
 	glDeleteProgram(hdr_shader.id);
 	glDeleteProgram(background_shader.id);
+	glDeleteProgram(irradiance_shader.id);
+	glDeleteProgram(brdf_shader.id);
+	glDeleteProgram(prefilter_shader.id);
 
 	glfwTerminate();
 
@@ -269,7 +303,16 @@ unsigned int openglcode::load_cubemap(std::vector<std::string> faces) {
 	return texture_id;
 }
 
-void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
+void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader, Shader prefilter_shader, Shader brdf_shader) {
+	glm::mat4 capture_views[] = {
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(-1.0f,  0.0f,  0.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  1.0f,  0.0f), glm::vec3(0.0f,  0.0f,  1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f,  0.0f), glm::vec3(0.0f,  0.0f, -1.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f,  1.0f), glm::vec3(0.0f, -1.0f,  0.0f)),
+		glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f,  0.0f, -1.0f), glm::vec3(0.0f, -1.0f,  0.0f))
+	};
+
 	glGenFramebuffers(1, &capture_fbo);
 	glGenRenderbuffers(1, &capture_rbo);
 
@@ -280,7 +323,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 
 	stbi_set_flip_vertically_on_load(true);
 	int width, height, color_ch;
-	float* data = stbi_loadf("texture/autumn_field_puresky_4k.hdr", &width, &height, &color_ch, 0);
+	float* data = stbi_loadf("texture/fhd_skybox.hdr", &width, &height, &color_ch, 0);
 
 	if (data) {
 		glGenTextures(1, &hdr_texture);
@@ -301,6 +344,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 
 	glGenTextures(1, &env_cubemap);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+	//gl_check_error();
 
 	for (unsigned int i = 0; i < 6; i++)
 	{
@@ -309,7 +353,7 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
 	glm::mat4 capture_projection = glm::perspective(glm::radians(90.0f), 1.0f, 0.1f, 10.0f);
@@ -332,6 +376,9 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 		glBindVertexArray(0);
 	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
 
 	glGenTextures(1, &irradiance_map);
 	glBindTexture(GL_TEXTURE_CUBE_MAP, irradiance_map);
@@ -358,6 +405,90 @@ void openglcode::draw_skybox(Shader hdr_shader, Shader irradiance_shader) {
 
 	glViewport(0, 0, 32, 32);
 	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		irradiance_shader.set_mat4("view", capture_views[i]);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, irradiance_map, 0);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glBindVertexArray(vao);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+		glBindVertexArray(0);
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glGenTextures(1, &prefilter_map);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, prefilter_map);
+
+	for (unsigned int i = 0; i < 6; i++) {
+		//it is sufficient for most reflections, but if you have a lot of soft materials, you may want to increase it
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGB16F, 128, 128, 0, GL_RGB, GL_FLOAT, nullptr);
+	}
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+	prefilter_shader.use();
+	prefilter_shader.set_int("envronment_map", 0);
+	prefilter_shader.set_mat4("projection", capture_projection);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, env_cubemap);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	unsigned int max_mip_levels = 5;
+
+	for (unsigned int mip = 0; mip < max_mip_levels; mip++) {
+		unsigned int mip_width = 128 * std::pow(0.5, mip);
+		unsigned int mip_height = 128 * std::pow(0.5, mip);
+
+		glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, mip_width, mip_height);
+		glViewport(0, 0, mip_width, mip_height);
+
+		float roughness = (float)mip / (float)(max_mip_levels - 1);
+		prefilter_shader.set_float("roughness", roughness);
+
+		for (unsigned int i = 0; i < 6; i++) {
+			prefilter_shader.set_mat4("view", capture_views[i]);
+			glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, prefilter_map, mip);
+
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+			glBindVertexArray(vao);
+			glDrawArrays(GL_TRIANGLES, 0, 36);
+			glBindVertexArray(0);
+		}
+	}
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glGenTextures(1, &brdf_texture);
+	glBindTexture(GL_TEXTURE_2D, brdf_texture);
+	//use 16 bit precision floating format
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RG16F,  512, 512, 0, GL_RGB, GL_FLOAT, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, capture_fbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, capture_rbo);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, 512, 512);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, brdf_texture, 0);
+	
+	glViewport(0, 0, 512, 512);
+	brdf_shader.use();
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	glBindVertexArray(qao);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+	glBindVertexArray(0);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 void openglcode::draw_square() {
@@ -880,4 +1011,107 @@ void mouse_callback(GLFWwindow* window, double x_pos, double y_pos) {
 
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset) {
 	camera.process_mouse_scroll((float)y_offset);
+}
+/*
+GLenum openglcode::_gl_check_error(const char* file, int line) {
+	GLenum error_code;
+
+	while ((error_code = glGetError()) != GL_NO_ERROR) {
+		std::string error;
+
+		switch (error_code) {
+		case GL_INVALID_ENUM:
+			error = "INVALID_ENUM";
+			break;
+		case GL_INVALID_VALUE:
+			error = "INALID_VALUE";
+			break;
+		case GL_INVALID_OPERATION:
+			error = "INVALID_OPERATION";
+			break;
+		case GL_STACK_OVERFLOW:
+			error = "STACK_OVERFLOW";
+			break;
+		case GL_STACK_UNDERFLOW:
+			error = "STACK_UNDERFLOW";
+			break;
+		case GL_OUT_OF_MEMORY:
+			error = "OUT_OF_MEMORY";
+			break;
+		case GL_INVALID_FRAMEBUFFER_OPERATION:
+			error = "INVALID_FRAMEBUFFER_OPERATION";
+			break;
+		default:
+			error = "UNKNOWN_ERROR";
+		}
+		std::cout << error << " | " << file << " ( " << line << " ) " << std::endl;
+	}
+
+	return error_code;
+}
+*/
+void APIENTRY gl_debug_output(GLenum source, GLenum type, unsigned int id, GLenum severity, GLsizei length, const char* message, const void* user_param) {
+	if (id == 131169 || id == 131218 || id == 131204) {
+		return;
+	}
+
+	std::cout << "=================" << std::endl;
+	std::cout << "Debug message (" << id << "): " << message << std::endl;
+
+	switch (source) {
+	case GL_DEBUG_SOURCE_API: std::cout << "Source: API";
+		break;
+	case GL_DEBUG_SOURCE_WINDOW_SYSTEM: std::cout << "Source: Window system";
+		break;
+	case GL_DEBUG_SOURCE_SHADER_COMPILER: std::cout << "Source: Shader compiler";
+		break;
+	case GL_DEBUG_SOURCE_THIRD_PARTY: std::cout << "Source: Third party";
+		break;
+	case GL_DEBUG_SOURCE_APPLICATION: std::cout << "Source: Application";
+		break;
+	case GL_DEBUG_SOURCE_OTHER: std::cout << "Source: Other";
+		break;
+	default:
+		std::cout << "Source: Unknown";
+	}
+	std::cout << std::endl;
+
+	switch (type) {
+	case GL_DEBUG_TYPE_ERROR: std::cout << "Type: Error";
+		break;
+	case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR: std::cout << "Type: Depreacted behavior";
+		break;
+	case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR: std::cout << "Type: Undefined behavior";
+		break;
+	case GL_DEBUG_TYPE_PORTABILITY: std::cout << "Type: Portability";
+		break;
+	case GL_DEBUG_TYPE_PERFORMANCE: std::cout << "Type: Performance";
+		break;
+	case GL_DEBUG_TYPE_MARKER: std::cout << "Type: Marker";
+		break;
+	case GL_DEBUG_TYPE_PUSH_GROUP: std::cout << "Type: Push group";
+		break;
+	case GL_DEBUG_TYPE_POP_GROUP: std::cout << "Type: Pop group";
+		break;
+	case GL_DEBUG_TYPE_OTHER: std::cout << "Type: Other";
+		break;
+	default:
+		std::cout << "Type: Unknown";
+	}
+	std::cout << std::endl;
+
+	switch (severity) {
+	case GL_DEBUG_SEVERITY_HIGH: std::cout << "Severity: HIGH";
+		break;
+	case GL_DEBUG_SEVERITY_MEDIUM: std::cout << "Severity: Medium";
+		break;
+	case GL_DEBUG_SEVERITY_LOW: std::cout << "Severity: Low";
+		break;
+	case GL_DEBUG_SEVERITY_NOTIFICATION: std::cout << "Severity: Notification";
+		break;
+	default:
+		std::cout << "Severity: Unknown";
+	}
+
+	std::cout << std::endl << std::endl;
 }
