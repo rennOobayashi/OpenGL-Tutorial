@@ -104,11 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-<<<<<<< HEAD
-      <AdditionalIncludeDirectories>C:\Users\inhee\source\repos\Opengl_Tut\assimp\include;C:\glm;C:\glfw-3.4\include;C:\glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-=======
       <AdditionalIncludeDirectories>C:\Assimp\include;C:\glm;C:\glfw-3.4\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
->>>>>>> 25907f993c2560dfe871004ec28598a184e9841f
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

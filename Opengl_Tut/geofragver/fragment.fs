@@ -92,6 +92,9 @@ void main()
     color = pow(color, vec3(1.0 / 2.2));
 
     FragColor = vec4(color, 1.0);
+
+    FragColor.rgb = normal;
+    FragColor.a = 1.0;
 }
 
 //얼마나 표면의 빛을 잘 반사하고 굴절시키는지 계산(프리넬 방정식)
