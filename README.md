@@ -10,3 +10,9 @@ My head hurts even when I don't look at a digital device. I still don't know why
 
 2/8
 福岡への旅行準備のために短い修正のみしました。
+
+05/03
+課題...多すぎる...
+
+6/24
+突然ビジュアルスタジオファイルが壊れて修正されました。
