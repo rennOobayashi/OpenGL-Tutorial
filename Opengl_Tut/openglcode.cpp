@@ -3,7 +3,7 @@
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double x_pos, double y_pos);
 void scroll_callback(GLFWwindow* window, double x_offset, double y_offset);
-void gl_debug_output(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param);
+//void gl_debug_output(GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar* message, const void* user_param);
 
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 float last_x = X / 2.0f;
@@ -23,6 +23,24 @@ void openglcode::init() {
 	exposure = 2.0;
 
 	glfwInit();
+
+	if (FT_Init_FreeType(&ft)) {
+		throw 1;
+	}
+
+	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &fface)) {
+		throw 2;
+	}
+
+	//Dynamically allocate font size from 0 ~ 48 pixels
+	FT_Set_Pixel_Sizes(fface, 0, 48);
+
+	//test text load
+	if (FT_Load_Char(fface, 'X', FT_LOAD_RENDER)) {
+		throw 2;
+	}
+
+	load_font();
 }
 
 void openglcode::set_n_run() {
@@ -43,13 +61,13 @@ void openglcode::set_n_run() {
 		glm::vec3(7.2f, -5.5f, 7.1f)
 	};
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	glfwWindowHint(GLFW_SAMPLES, 8);
 	//It is recommended to remove this request hint when releasing,
 	//as it may slow down the speed compared to the context.
-	glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
+	//glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, true);
 
 #ifdef __APPLE__
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
@@ -76,6 +94,7 @@ void openglcode::set_n_run() {
 	
 	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 
+	/*
 	if (flags && GL_CONTEXT_FLAG_DEBUG_BIT) {
 		glEnable(GL_DEBUG_OUTPUT);
 		//Tell OpenGL to print debug output
@@ -87,12 +106,14 @@ void openglcode::set_n_run() {
 		//glDebugMessageControl(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, GL_TRUE);
 		//Custom error message
 		//glDebugMessageInsert(GL_DEBUG_SOURCE_API, GL_DEBUG_TYPE_ERROR, 0, GL_DEBUG_SEVERITY_HIGH, -1, "Error message here");
-	}
+	}*/
 
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
 	//appropriately filters cubemap faces
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
 	Shader hdr_shader("geofragver/cubemap_vertex.vs", "geofragver/cubemap_fragment.fs");
@@ -221,8 +242,6 @@ void openglcode::set_n_run() {
 			glDrawElements(GL_TRIANGLE_STRIP, index_cnt, GL_UNSIGNED_INT, 0);
 			glBindVertexArray(0);
 		}
-
-
 
 		background_shader.use();
 		background_shader.set_mat4("view", view);
@@ -953,6 +972,44 @@ void openglcode::render_scene(const Shader& shader) {
 	glBindVertexArray(vao);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	glBindVertexArray(0);*/
+}
+
+void openglcode::load_font() {
+	//Controls how texture data is read from memory.
+	//This code sets the read to 1 byte at a time without padding to represent the color. (default=4)
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+	for (unsigned char c = 0; c < 128; c++) {
+		if (FT_Load_Char(fface, c, FT_LOAD_RENDER)) {
+			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
+			continue;
+		}
+
+		unsigned int texture;
+		glGenTextures(1, &texture);
+		glBindTexture(GL_TEXTURE_2D, texture);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 
+			fface->glyph->bitmap.width, 
+			fface->glyph->bitmap.rows, 
+			0, GL_RED, GL_UNSIGNED_BYTE,
+			fface->glyph->bitmap.buffer);
+
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+		Character character = {
+			texture,
+			glm::ivec2(fface->glyph->bitmap.width, fface->glyph->bitmap.rows),
+			glm::ivec2(fface->glyph->bitmap_left, fface->glyph->bitmap_top),
+			fface->glyph->advance.x
+		};
+		characters.insert(std::pair<char, Character>(c, character));
+	}
+
+	FT_Done_Face(fface);
+	FT_Done_FreeType(ft);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {

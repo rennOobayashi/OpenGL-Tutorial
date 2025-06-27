@@ -9,6 +9,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
 #include <random>
 #include <fstream>
 #include <iostream>
@@ -16,6 +19,15 @@
 #define X 1280
 #define Y 720
 #define gl_check_error() _gl_check_error(__FILE__, __LINE__)
+
+struct Character {
+	unsigned int texture_id;
+	glm::ivec2 size;
+	glm::ivec2 Bearing;
+	unsigned int adventce;
+};
+
+std::map<char, Character> characters;
 
 class openglcode
 {
@@ -25,9 +37,12 @@ private:
 	glm::vec3 light_pos;
 	glm::vec3 light_color;
 	glm::vec3 light_dir;
+	FT_Library ft;
+	FT_Face fface;
 	unsigned int vao, vbo, color_buffer[2], sao, sbo, fbo, depth_map, qao, qbo, depth_cube_map, hdr_fbo, hdr_depth, pbo[2], pbuffer[2];
 	unsigned int gbo, gpos, gnorm, gcolor_spec, noise_texture;
 	unsigned int ssbo, sscolor_buffer, ssbro, sscolor_buffer_blur;
+	unsigned int tao, tbo;
 	unsigned int capture_fbo, capture_rbo;
 	unsigned int env_cubemap;
 	unsigned int irradiance_map;
@@ -59,6 +74,7 @@ private:
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
 	GLenum _gl_check_error(const char* file, int line);
+	void load_font();
 public:
 	void init();
 	void set_n_run();
