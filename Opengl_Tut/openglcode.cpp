@@ -23,24 +23,6 @@ void openglcode::init() {
 	exposure = 2.0;
 
 	glfwInit();
-
-	if (FT_Init_FreeType(&ft)) {
-		throw 1;
-	}
-
-	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &fface)) {
-		throw 2;
-	}
-
-	//Dynamically allocate font size from 0 ~ 48 pixels
-	FT_Set_Pixel_Sizes(fface, 0, 48);
-
-	//test text load
-	if (FT_Load_Char(fface, 'X', FT_LOAD_RENDER)) {
-		throw 2;
-	}
-
-	load_font();
 }
 
 void openglcode::set_n_run() {
@@ -92,7 +74,7 @@ void openglcode::set_n_run() {
 		return;
 	}
 	
-	glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
+	//glGetIntegerv(GL_CONTEXT_FLAGS, &flags);
 
 	/*
 	if (flags && GL_CONTEXT_FLAG_DEBUG_BIT) {
@@ -112,6 +94,8 @@ void openglcode::set_n_run() {
 	glDepthFunc(GL_LEQUAL);
 	//appropriately filters cubemap faces
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+	//When enabled, the skybox is not visible.
+	//glEnable(GL_CULL_FACE);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
@@ -121,8 +105,9 @@ void openglcode::set_n_run() {
 	Shader prefilter_shader("geofragver/cubemap_vertex.vs", "geofragver/hammersley_fragment.fs");
 	Shader brdf_shader("geofragver/brdf_vertex.vs", "geofragver/brdf_fragment.fs");
 	Shader background_shader("geofragver/background_vertex.vs", "geofragver/background_fragment.fs");
+	Shader font_shader("geofragver/font_vertex.vs", "geofragver/font_fragment.fs");
 	//Model rock_model("model/rock/rock.obj");
-	
+
 	draw_square();
 	draw_sphere();
 
@@ -149,6 +134,19 @@ void openglcode::set_n_run() {
 	rough_tex = load_texture("texture/pbr/rough.png");
 	ao_tex = load_texture("texture/pbr/ao.png");
 
+	load_font();
+
+	glGenVertexArrays(1, &tao);
+	glGenBuffers(1, &tbo);
+	glBindVertexArray(tao);
+	glBindBuffer(GL_ARRAY_BUFFER, tbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+
 	shader.use();
 	shader.set_int("irradiance_map", 0);
 	shader.set_int("prefilter_map", 1);
@@ -162,14 +160,18 @@ void openglcode::set_n_run() {
 	background_shader.use();
 	shader.set_int("envronment_map", 0);
 
+	glm::mat4 text_projection = glm::ortho(0.0f, static_cast<float>(X), 0.0f, static_cast<float>(Y));
+	font_shader.use();
+	glUniformMatrix4fv(glGetUniformLocation(font_shader.id, "projection"), 1, GL_FALSE, glm::value_ptr(text_projection));
 
 	draw_skybox(hdr_shader, irradiance_shader, prefilter_shader, brdf_shader);
 	
 	int scr_width, scr_height;	
 	glfwGetFramebufferSize(window, &scr_width, &scr_height);
 	glViewport(0, 0, scr_width, scr_height);
-
+	
 	while (!glfwWindowShouldClose(window)) {
+
 		float current_frame = (float)glfwGetTime();
 
 		delta_time = current_frame - last_frame;
@@ -181,6 +183,10 @@ void openglcode::set_n_run() {
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		render_text(font_shader, "testing TESTiNG", 0.0f, 10.0f, 1.0f, glm::vec3(0.5f, 0.8f, 0.2f));
+		render_text(font_shader, "Nintendo love", 700.0f, 600.0f, 1.0f, glm::vec3(0.8f, 0.2f, 0.5f));
+		
+		
 		//std::cout << camera.fov << std::endl;
 		glm::mat4 view = camera.get_view_matrix();
 		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
@@ -243,6 +249,7 @@ void openglcode::set_n_run() {
 			glBindVertexArray(0);
 		}
 
+
 		background_shader.use();
 		background_shader.set_mat4("view", view);
 		background_shader.set_mat4("projection", projection);
@@ -256,7 +263,7 @@ void openglcode::set_n_run() {
 		//brdf_shader.use();
 		//glBindVertexArray(qao);
 		//glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-		//glBindVertexArray(0);
+		//glBindVertexArray(0);*/
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
@@ -278,6 +285,7 @@ void openglcode::set_n_run() {
 	glDeleteProgram(prefilter_shader.id);
 
 	glfwTerminate();
+	
 
 	return;
 }
@@ -975,14 +983,24 @@ void openglcode::render_scene(const Shader& shader) {
 }
 
 void openglcode::load_font() {
+	if (FT_Init_FreeType(&ft)) {
+		throw 1;
+	}
+
+	if (FT_New_Face(ft, "fonts/arial.ttf", 0, &fface)) {
+		throw 2;
+	}
+
+	//Dynamically allocate font size from 0 ~ 48 pixels
+	FT_Set_Pixel_Sizes(fface, 0, 48);
+
 	//Controls how texture data is read from memory.
 	//This code sets the read to 1 byte at a time without padding to represent the color. (default=4)
 	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
 	for (unsigned char c = 0; c < 128; c++) {
 		if (FT_Load_Char(fface, c, FT_LOAD_RENDER)) {
-			std::cout << "ERROR::FREETYPE: Failed to load Glyph\n";
-			continue;
+			throw 2;
 		}
 
 		unsigned int texture;
@@ -1010,6 +1028,43 @@ void openglcode::load_font() {
 
 	FT_Done_Face(fface);
 	FT_Done_FreeType(ft);
+}
+
+void openglcode::render_text(Shader& shader, std::string text, float x, float y, float scale, glm::vec3 color) {
+	shader.use();
+	glUniform3f(glGetUniformLocation(shader.id, "text_color"), color.x, color.y, color.z);
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(tao);
+
+	std::string::const_iterator citer;
+	for (citer = text.begin(); citer != text.end(); citer++)
+	{
+		Character ch = characters[*citer];
+
+		float xpos = x + ch.bearing.x * scale;
+		float ypos = y - (ch.size.y - ch.bearing.y);
+
+		float w = ch.size.x * scale;
+		float h = ch.size.y * scale;
+		float vertices[6][4] = {
+			{ xpos,     ypos + h,   0.0f, 0.0f },
+			{ xpos,     ypos,       0.0f, 1.0f },
+			{ xpos + w, ypos,       1.0f, 1.0f },
+
+			{ xpos,     ypos + h,   0.0f, 0.0f },
+			{ xpos + w, ypos,       1.0f, 1.0f },
+			{ xpos + w, ypos + h,   1.0f, 0.0f }
+		};
+		glBindTexture(GL_TEXTURE_2D, ch.texture_id);
+		glBindBuffer(GL_ARRAY_BUFFER, tbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+		x += (ch.advence >> 6) * scale; 
+	}
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {

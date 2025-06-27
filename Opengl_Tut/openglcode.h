@@ -23,15 +23,15 @@
 struct Character {
 	unsigned int texture_id;
 	glm::ivec2 size;
-	glm::ivec2 Bearing;
-	unsigned int adventce;
+	glm::ivec2 bearing;
+	unsigned int advence;
 };
 
-std::map<char, Character> characters;
 
 class openglcode
 {
 private:
+	std::map<unsigned char, Character> characters;
 	const unsigned int shadow_x = 1024, shadow_y = 1024;
 	GLFWwindow* window;
 	glm::vec3 light_pos;
@@ -75,6 +75,7 @@ private:
 	unsigned int load_texture(char const* path);
 	GLenum _gl_check_error(const char* file, int line);
 	void load_font();
+	void render_text(Shader& s, std::string text, float x, float y, float scale, glm::vec3 color);
 public:
 	void init();
 	void set_n_run();
