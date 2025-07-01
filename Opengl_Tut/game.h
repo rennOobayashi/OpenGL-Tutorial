@@ -1,3 +1,6 @@
+#ifndef GAME_H
+#define GAME_H
+
 #include "openglcode.h"
 
 enum GameState {
@@ -20,3 +23,5 @@ public:
 	void update(float dt);
 	void render();
 };
+
+#endif

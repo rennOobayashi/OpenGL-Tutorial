@@ -141,6 +141,7 @@
     <ClCompile Include="model.cpp" />
     <ClCompile Include="openglcode.cpp" />
     <ClCompile Include="stb_image.c" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="camera.h" />
@@ -150,6 +151,7 @@
     <ClInclude Include="openglcode.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

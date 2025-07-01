@@ -18,6 +18,7 @@ C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(781,1): warning
 C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(1024,25): warning C4838: 'FT_Pos'에서 'unsigned int'(으)로의 변환에는 축소 변환이 필요합니다.
 C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(1110,12): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
 C:\Users\devfo\source\repos\Opengl_Tut\Opengl_Tut\openglcode.cpp(1111,12): warning C4244: '=': 'double'에서 'float'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+  texture.cpp
   코드를 생성하고 있습니다...
 LINK : warning LNK4098: 'MSVCRT' defaultlib가 다른 라이브러리와 충돌합니다. /NODEFAULTLIB:library를 사용하십시오.
   Opengl_Tut.vcxproj -> C:\Users\devfo\source\repos\Opengl_Tut\x64\Debug\Opengl_Tut.exe
