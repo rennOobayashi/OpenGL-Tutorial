@@ -16,3 +16,6 @@ My head hurts even when I don't look at a digital device. I still don't know why
 
 6/24
 突然ビジュアルスタジオファイルが壊れて修正されました。
+
+7/1
+gameクラスのコンストラクタの初期化を忘れてしまいました。

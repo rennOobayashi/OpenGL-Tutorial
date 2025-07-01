@@ -1,3 +1,6 @@
+#ifndef OPENGLCODE_H
+#define OPENGLCODE_H
+
 #include "shader.h"
 #include "model.h"
 #include "camera.h"
@@ -73,10 +76,11 @@ private:
 	void render_scene(const Shader &shader);
 	unsigned int load_cubemap(std::vector<std::string> faces);
 	unsigned int load_texture(char const* path);
-	GLenum _gl_check_error(const char* file, int line);
+	//GLenum _gl_check_error(const char* file, int line);
 	void load_font();
 	void render_text(Shader& s, std::string text, float x, float y, float scale, glm::vec3 color);
 public:
 	void init();
 	void set_n_run();
 };
+#endif

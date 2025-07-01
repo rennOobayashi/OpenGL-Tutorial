@@ -1,8 +1,10 @@
 #include <iostream>
+#include "game.h"
 #include "openglcode.h"
 
 int main()
 {
+#if false
 	openglcode run;
 
 	try {
@@ -24,4 +26,11 @@ int main()
 		return -1;
 	}
 	return 0;
+#endif
+
+#if 1
+	game g(1280, 720);
+
+	g.update(60.0f);
+#endif
 }
