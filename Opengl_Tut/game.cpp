@@ -10,7 +10,7 @@ void game::update(float dt) {
 
 	try {
 		opengl.init();
-		opengl.set_n_run();
+		opengl.run();
 	}
 	catch (int error_num) {
 		switch (error_num) {

@@ -15,6 +15,7 @@ private:
 	GameState state;
 	bool keys[1024];
 	unsigned int width, height;
+	unsigned int tex1;
 public:
 	game(unsigned int _width, unsigned int _height);
 	~game() {} //Destructor

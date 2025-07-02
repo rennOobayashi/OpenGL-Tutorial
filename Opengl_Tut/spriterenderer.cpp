@@ -1,5 +1,15 @@
 #include "spriterenderer.h"
 
+spriterenderer::spriterenderer(Shader& shader) : shader(shader), qao(0) {
+	init_render_data();
+	this->shader = shader;
+}
+
+spriterenderer::~spriterenderer() {
+	glDeleteVertexArrays(1, &qao);
+	glDeleteProgram(shader.id);
+}
+
 void spriterenderer::init_render_data() {
 	unsigned int vbo;
 
@@ -35,9 +45,11 @@ void spriterenderer::draw_sprite(texture& texture, glm::vec2 position, glm::vec2
 	//It seems to indicate the initial starting point location.
 	model = glm::translate(model, glm::vec3(position, 0.0f));
 
-	model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f));
+	//Matrix multiplication proceeds from right to left,
+	//so transform the matrix in reverse order
+	model = glm::translate(model, glm::vec3(0.5f * size.x, 0.5f * size.y, 0.0f)); //right
 	model = glm::rotate(model, glm::radians(rotate), glm::vec3(0.0f, 0.0f, 1.0f));
-	model = glm::translate(model, glm::vec3( - 0.5f * size.x, -0.5f * size.y, 0.0f));
+	model = glm::translate(model, glm::vec3(-0.5f * size.x, -0.5f * size.y, 0.0f)); //left
 
 	model = glm::scale(model, glm::vec3(size, 1.0f));
 

@@ -42,7 +42,7 @@
     <ClCompile Include="texture.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="sprite_renderer.cpp">
+    <ClCompile Include="spriterenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,7 +71,7 @@
     <ClInclude Include="texture.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="sprite_renderer.h">
+    <ClInclude Include="spriterenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

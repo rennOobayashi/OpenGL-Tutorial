@@ -140,7 +140,7 @@
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="model.cpp" />
     <ClCompile Include="openglcode.cpp" />
-    <ClCompile Include="sprite_renderer.cpp" />
+    <ClCompile Include="spriterenderer.cpp" />
     <ClCompile Include="stb_image.c" />
     <ClCompile Include="texture.cpp" />
   </ItemGroup>
@@ -151,7 +151,7 @@
     <ClInclude Include="model.h" />
     <ClInclude Include="openglcode.h" />
     <ClInclude Include="shader.h" />
-    <ClInclude Include="sprite_renderer.h" />
+    <ClInclude Include="spriterenderer.h" />
     <ClInclude Include="stb_image.h" />
     <ClInclude Include="texture.h" />
   </ItemGroup>

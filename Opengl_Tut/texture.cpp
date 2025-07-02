@@ -1,6 +1,6 @@
 #include "texture.h"
 
-texture::texture() : width(0), height(0), internal_format(GL_RGB), image_format(GL_REPEAT), 
+texture::texture() : width(0), height(0), internal_format(GL_RGB), image_format(GL_RGB), 
 	wrap_s(GL_REPEAT), wrap_t(GL_REPEAT), filter_min(GL_LINEAR), filter_mag(GL_LINEAR) {
 	glGenTextures(1, &id);
 } 
