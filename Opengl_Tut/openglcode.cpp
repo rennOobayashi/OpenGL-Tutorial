@@ -189,7 +189,8 @@ void openglcode::set_n_run() {
 		
 		//std::cout << camera.fov << std::endl;
 		glm::mat4 view = camera.get_view_matrix();
-		glm::mat4 projection = glm::perspective(glm::radians(camera.fov), (float)X / (float)Y, 0.1f, 100.0f);
+		//No need to apply perspective because its 2D
+		glm::mat4 projection = glm::perspective(glm::radians(0.0f), (float)X / (float)Y, -1.0f, 1.0f);
 		glm::mat4 model = glm::mat4(1.0f);
 		shader.use();
 		shader.set_mat4("view", view);
