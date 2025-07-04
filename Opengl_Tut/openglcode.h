@@ -28,8 +28,6 @@ class openglcode
 {
 private:
 	GLFWwindow* window;
-	unsigned char* data;
-	texture load_texture(char const* path);
 public:
 	void init();
 	void run();

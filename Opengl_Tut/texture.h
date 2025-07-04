@@ -2,7 +2,7 @@
 #define TEXTURE_H
 #include <glad/glad.h>
 
-class texture
+class Texture
 {
 public:
 	unsigned int id;
@@ -11,7 +11,7 @@ public:
 	unsigned int image_format;
 	unsigned int wrap_s, wrap_t;
 	unsigned int filter_min, filter_mag;
-	texture();
+	Texture();
 	void generate(unsigned int _width, unsigned int _height, unsigned char *data);
 	void bind() const;
 };

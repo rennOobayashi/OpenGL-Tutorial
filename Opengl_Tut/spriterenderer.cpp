@@ -1,16 +1,16 @@
 #include "spriterenderer.h"
 
-spriterenderer::spriterenderer(Shader& shader) : shader(shader), qao(0) {
+SpriteRenderer::SpriteRenderer(Shader& shader) : shader(shader), qao(0) {
 	init_render_data();
 	this->shader = shader;
 }
 
-spriterenderer::~spriterenderer() {
+SpriteRenderer::~SpriteRenderer() {
 	glDeleteVertexArrays(1, &qao);
 	glDeleteProgram(shader.id);
 }
 
-void spriterenderer::init_render_data() {
+void SpriteRenderer::init_render_data() {
 	unsigned int vbo;
 
 	//two triangles to make a quad
@@ -38,7 +38,7 @@ void spriterenderer::init_render_data() {
 	glBindVertexArray(0);
 }
 
-void spriterenderer::draw_sprite(texture& texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color) {
+void SpriteRenderer::draw_sprite(Texture& texture, glm::vec2 position, glm::vec2 size, float rotate, glm::vec3 color) {
 	shader.use();
 
 	glm::mat4 model = glm::mat4(1.0f);

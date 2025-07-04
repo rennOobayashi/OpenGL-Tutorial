@@ -1,11 +1,11 @@
 #include "texture.h"
 
-texture::texture() : width(0), height(0), internal_format(GL_RGB), image_format(GL_RGB), 
+Texture::Texture() : width(0), height(0), internal_format(GL_RGB), image_format(GL_RGB), 
 	wrap_s(GL_REPEAT), wrap_t(GL_REPEAT), filter_min(GL_LINEAR), filter_mag(GL_LINEAR) {
 	glGenTextures(1, &id);
 } 
 
-void texture::generate(unsigned int _width, unsigned int _height, unsigned char* data) {
+void Texture::generate(unsigned int _width, unsigned int _height, unsigned char* data) {
 	width = _width;
 	height = _height;
 	glBindTexture(GL_TEXTURE_2D, id);
@@ -17,6 +17,6 @@ void texture::generate(unsigned int _width, unsigned int _height, unsigned char*
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void texture::bind() const {
+void Texture::bind() const {
 	glBindTexture(GL_TEXTURE_2D, id);
 }

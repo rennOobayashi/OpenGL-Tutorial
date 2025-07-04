@@ -38,17 +38,8 @@ void openglcode::run() {
 		return;
 	}
 
-	Shader shader("geofragver/vertex.vs", "geofragver/fragment.fs");
-	spriterenderer renderer(shader);
-	texture tex;
-
+	spriterenderer
 	glm::mat4 projection = glm::ortho(0.0f, (float)X, (float)Y, 0.0f, -1.0f, 1.0f);
-
-	shader.use();
-	shader.set_int("img", 0);
-	shader.set_mat4("projection", projection);
-
-	tex = load_texture("texture/watashi.PNG");
 
 
 	while (!glfwWindowShouldClose(window)) {
@@ -67,41 +58,4 @@ void openglcode::run() {
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
-}
-
-texture openglcode::load_texture(char const* path) {
-	texture tex;
-	unsigned int id;
-	int width, height, color_ch;
-	GLenum format = GL_SRGB;
-
-	data = stbi_load(path, &width, &height, &color_ch, 0);
-
-	if (data)
-	{
-		if (color_ch == 1) {
-			format = GL_RED;
-		}
-		else if (color_ch == 3) {
-			format = GL_RGB;
-		}
-		else if (color_ch == 4) {
-			format = GL_RGBA;
-		}
-		tex.internal_format = format;
-		tex.image_format = format;
-
-		tex.generate(width, height, data);
-
-		stbi_set_flip_vertically_on_load(1);
-	}
-	else
-	{
-		std::cout << "Failed to load texture\n";
-	}
-
-	//mipmap 생성 후 이미지 메모리 반환
-	stbi_image_free(data);
-
-	return tex;
 }

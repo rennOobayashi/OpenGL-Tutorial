@@ -8,7 +8,7 @@
 #include "texture.h"
 #include "shader.h"
 
-class spriterenderer
+class SpriteRenderer
 {
 private:
 	Shader shader;
@@ -16,10 +16,10 @@ private:
 
 	void init_render_data();
 public:
-	spriterenderer(Shader &shader);
-	~spriterenderer();
+	SpriteRenderer(Shader &shader);
+	~SpriteRenderer();
 
-	void draw_sprite(texture &texture, glm::vec2 position, 
+	void draw_sprite(Texture &texture, glm::vec2 position, 
 		glm::vec2 size = glm::vec2(10.0f, 10.0f), float rotate = 0.0f,
 		glm::vec3 color = glm::vec3(1.0f));
 };
