@@ -38,16 +38,25 @@ void openglcode::run() {
 		return;
 	}
 
-	spriterenderer
 	glm::mat4 projection = glm::ortho(0.0f, (float)X, (float)Y, 0.0f, -1.0f, 1.0f);
 
+	ResourceManager::load_shader("geofragver/vertex.vs", "geofragver/fragment.fs", nullptr, "sprite");
+	ResourceManager::get_shader("sprite").use().set_int("img", 0);
+	ResourceManager::get_shader("sprite").use().set_mat4("projection", projection);
+
+	Shader shader = ResourceManager::get_shader("sprite");
+	ResourceManager::load_texture("texture/watashi.PNG", true, "face");
+
+	renderer = new SpriteRenderer(shader);
+
+	Texture tex = ResourceManager::get_texture("face");
 
 	while (!glfwWindowShouldClose(window)) {
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		renderer.draw_sprite(tex, glm::vec2(200.0f, 200.0f), glm::vec2(300.0f, 400.0f), 45.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		renderer->draw_sprite(tex, glm::vec2(200.0f, 200.0f), glm::vec2(300.0f, 400.0f), 45.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

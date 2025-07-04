@@ -1,11 +1,9 @@
 #ifndef OPENGLCODE_H
 #define OPENGLCODE_H
 
-#include "shader.h"
-#include "model.h"
 #include "camera.h"
 #include "spriterenderer.h"
-#include "texture.h"
+#include "resourcemanager.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -28,8 +26,13 @@ class openglcode
 {
 private:
 	GLFWwindow* window;
+	SpriteRenderer* renderer;
+
 public:
 	void init();
 	void run();
+	~openglcode() {
+		delete renderer;
+	}
 };
 #endif

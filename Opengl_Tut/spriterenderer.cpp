@@ -1,13 +1,12 @@
 #include "spriterenderer.h"
 
 SpriteRenderer::SpriteRenderer(Shader& shader) : shader(shader), qao(0) {
-	init_render_data();
 	this->shader = shader;
+	init_render_data();
 }
 
 SpriteRenderer::~SpriteRenderer() {
 	glDeleteVertexArrays(1, &qao);
-	glDeleteProgram(shader.id);
 }
 
 void SpriteRenderer::init_render_data() {
@@ -54,7 +53,7 @@ void SpriteRenderer::draw_sprite(Texture& texture, glm::vec2 position, glm::vec2
 	model = glm::scale(model, glm::vec3(size, 1.0f));
 
 	shader.set_mat4("model", model);
-	shader.set_vec3("sprite_color", color);
+	shader.set_vec3("tex_color", color);
 
 	glActiveTexture(GL_TEXTURE0);
 	texture.bind();

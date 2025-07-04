@@ -10,15 +10,7 @@ Shader ResourceManager::load_shader(const char* vshader_file, const char* fshade
 }
 
 Shader ResourceManager::get_shader(std::string name) {
-	Shader s;
-	try {
-		s = shaders[name];
-		return s;
-	}
-	catch (std::out_of_range& e) {
-		std::cout << "Shader not found: " << name << std::endl; 
-		return s;
-	}
+		return shaders[name];
 }
 
 Texture ResourceManager::load_texture(const char *file, bool alpha, std::string name) {
