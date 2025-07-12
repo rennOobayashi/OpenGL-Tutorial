@@ -1,4 +1,7 @@
 It's only for study OpenGL.
+
+code from https://learnopengl.com
+
 大学の開講により更新が遅れることがあります。
 Updates may be delayed due to university course openings.
 
