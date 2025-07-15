@@ -12,7 +12,7 @@ void GameLevel::init(std::vector<std::vector<unsigned int>> tile_data, unsigned 
 			if (tile_data[y][x] == 1) {
 				glm::vec2 pos(unit_width * x, unit_height * y);
 				glm::vec2 size(unit_width, unit_height);
-				GameObject obj(pos, size, ResourceManager::get_texture("brick"), glm::vec3(0.8f, 0.8f, 0.7f));
+				GameObject obj(pos, size, ResourceManager::get_texture("solid_block"), glm::vec3(0.8f, 0.8f, 0.7f));
 				obj.is_solid = true;
 				bricks.push_back(obj);
 			}
@@ -33,7 +33,7 @@ void GameLevel::init(std::vector<std::vector<unsigned int>> tile_data, unsigned 
 
 				glm::vec2 pos(unit_width * x, unit_height * y);
 				glm::vec2 size(unit_width, unit_height); 
-				GameObject obj(pos, size, ResourceManager::get_texture("watashi"), color);
+				GameObject obj(pos, size, ResourceManager::get_texture("block"), color);
 				bricks.push_back(obj);
 			}
 		}

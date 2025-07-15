@@ -141,7 +141,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh.cpp" />
     <ClCompile Include="model.cpp" />
-    <ClCompile Include="openglcode.cpp" />
     <ClCompile Include="resourcemanager.cpp" />
     <ClCompile Include="spriterenderer.cpp" />
     <ClCompile Include="stb_image.c" />
@@ -154,7 +153,6 @@
     <ClInclude Include="gameobject.h" />
     <ClInclude Include="mesh.h" />
     <ClInclude Include="model.h" />
-    <ClInclude Include="openglcode.h" />
     <ClInclude Include="resourcemanager.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="spriterenderer.h" />

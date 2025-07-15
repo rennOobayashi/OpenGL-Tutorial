@@ -1,4 +1,6 @@
 It's only for study OpenGL.
+学校やバイト時間以外はできるだけ更新します。
+I will update as much as possible outside of school or part-time hours.
 
 code from https://learnopengl.com
 

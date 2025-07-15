@@ -1,10 +1,30 @@
 #include <iostream>
 #include "game.h"
-#include "openglcode.h"
+#define X 1280
+#define Y 720
 
 int main()
 {
-	game g(1280, 720);
+	Game game(X, Y);
 
-	g.update(60.0f);
+	try {
+		game.init();
+		game.update(60.0f);
+	}
+	catch (int error_num) {
+		switch (error_num) {
+		case 1:
+			std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+			break;
+		case 2:
+			std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+			break;
+		case 3:
+			std::cout << "ERROR::FREETYPE: Failed to load Glyph(text load)" << std::endl;
+			break;
+		}
+		return -1;
+	}
+
+	return 0;
 }

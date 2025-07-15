@@ -1,7 +1,26 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "openglcode.h"
+#include "camera.h"
+#include "spriterenderer.h"
+#include "resourcemanager.h"
+#include "gamelevel.h"
+#include "texture.h"
+
+#include <GLFW/glfw3.h>
+#include <glad/glad.h>
+
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
+#include <ft2build.h>
+#include FT_FREETYPE_H
+
+#include <random>
+#include <fstream>
+#include <iostream>
+#include <vector>
 
 enum GameState {
 	GAME_ACTIVE, //0
@@ -9,16 +28,22 @@ enum GameState {
 	GAME_WIN     //2
 };
 
-class game 
+class Game 
 {
 private:
-	GameState state;
+	GameState states;
 	bool keys[1024];
 	unsigned int width, height;
 	unsigned int tex1;
+
+	GLFWwindow* window;
+	SpriteRenderer* renderer;
+	std::vector<GameLevel> levels;
+	unsigned int level;
+
 public:
-	game(unsigned int _width, unsigned int _height);
-	~game() {} //Destructor
+	Game(unsigned int _width, unsigned int _height);
+	~Game() {} //Destructor
 	void init();
 	void process_input(float dt);
 	void update(float dt);
