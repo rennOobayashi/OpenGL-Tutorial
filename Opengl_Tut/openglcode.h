@@ -4,6 +4,7 @@
 #include "camera.h"
 #include "spriterenderer.h"
 #include "resourcemanager.h"
+#include "gamelevel.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -27,6 +28,8 @@ class openglcode
 private:
 	GLFWwindow* window;
 	SpriteRenderer* renderer;
+	std::vector<GameLevel> levels;
+	unsigned int level;
 
 public:
 	void init();

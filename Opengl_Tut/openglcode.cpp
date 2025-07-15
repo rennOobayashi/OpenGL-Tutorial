@@ -12,6 +12,19 @@ float lerp(float x, float y, float z) {
 
 void openglcode::init() {
 	glfwInit();
+
+	//texture
+	ResourceManager::load_texture("texture/floor.png", false, "background");
+	ResourceManager::load_texture("texture/koronesuki.png", true, "face");
+	ResourceManager::load_texture("texture/watashi.PNG", false, "block");
+	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
+
+	//levels
+	GameLevel level1;
+	GameLevel level2;
+	GameLevel level3;
+	GameLevel level4;
+
 }
 
 void openglcode::run() {
