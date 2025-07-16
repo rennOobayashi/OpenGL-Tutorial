@@ -5,9 +5,12 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 const glm::vec2 player_size(120.0f, 30.0f);
 const float player_velocity(500.0f);
 
-Game::Game(unsigned int _width, unsigned int _height) {
-	width = _width;
-	height = _height;
+Game::Game(unsigned int _width, unsigned int _height) 
+	: states(GAME_ACTIVE), keys(), width(_width), height(_height) { }
+
+Game::~Game() {
+	delete renderer;
+	delete player;
 }
 
 void Game::init() {
@@ -75,12 +78,19 @@ void Game::init() {
 	player = new GameObject(player_pos, player_size, ResourceManager::get_texture("player"));
 }
 
-void Game::update(float dt) {
+void Game::update() {
 	
 	while (!glfwWindowShouldClose(window)) {
+		float current_frame = (float)glfwGetTime();
+
+		delta_time = current_frame - last_frame;
+		last_frame = current_frame;
+
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		//clear depth value
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		process_input(window, delta_time);
 
 		if (states == GAME_ACTIVE) {
 			render();
@@ -92,6 +102,7 @@ void Game::update(float dt) {
 		glfwPollEvents();
 	}
 
+	glfwDestroyWindow(window);
 	glfwTerminate();
 }
 
@@ -105,4 +116,23 @@ void Game::render() {
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
+}
+
+void Game::process_input(GLFWwindow* window, float dt) {
+	if (states == GAME_ACTIVE) {
+		float velocity = player_velocity * dt;
+
+		if (glfwGetKey(window, GLFW_KEY_A) || glfwGetKey(window, GLFW_KEY_LEFT)) {
+			//Once you reach the left end, you won't move any further to the left.
+			if (player->position.x >= 0.0f) {
+				player->position.x -= velocity;
+			}
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) || glfwGetKey(window, GLFW_KEY_RIGHT)) {
+			//Once you reach the right end, you won't move any further to the right.
+			if (player->position.x <= width - player->size.x) {
+				player->position.x += velocity;
+			}
+		}
+	}
 }

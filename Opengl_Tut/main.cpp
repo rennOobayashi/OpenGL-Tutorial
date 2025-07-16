@@ -9,7 +9,7 @@ int main()
 
 	try {
 		game.init();
-		game.update(60.0f);
+		game.update();
 	}
 	catch (int error_num) {
 		switch (error_num) {

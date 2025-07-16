@@ -35,6 +35,8 @@ private:
 	bool keys[1024];
 	unsigned int width, height;
 	unsigned int tex1;
+	float delta_time;
+	float last_frame;
 
 	GLFWwindow* window;
 	SpriteRenderer* renderer;
@@ -45,10 +47,10 @@ private:
 
 public:
 	Game(unsigned int _width, unsigned int _height);
-	~Game() {} //Destructor
+	~Game(); //Destructor
 	void init();
-	void process_input(float dt);
-	void update(float dt);
+	void process_input(GLFWwindow* window, float dt);
+	void update();
 	void render();
 };
 
