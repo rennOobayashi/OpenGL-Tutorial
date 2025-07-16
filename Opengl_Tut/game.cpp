@@ -2,6 +2,9 @@
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height);
 
+const glm::vec2 player_size(120.0f, 30.0f);
+const float player_velocity(500.0f);
+
 Game::Game(unsigned int _width, unsigned int _height) {
 	width = _width;
 	height = _height;
@@ -47,6 +50,7 @@ void Game::init() {
 	ResourceManager::load_texture("texture/koronesuki.png", false, "face");
 	ResourceManager::load_texture("texture/watashi.PNG", true, "block");
 	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
+	ResourceManager::load_texture("texture/paddle.png", true, "player");
 
 	//levels
 	GameLevel level1;
@@ -65,6 +69,10 @@ void Game::init() {
 	levels.push_back(level4);
 	level = 0;
 	states = GAME_ACTIVE;
+
+	glm::vec2 player_pos = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
+
+	player = new GameObject(player_pos, player_size, ResourceManager::get_texture("player"));
 }
 
 void Game::update(float dt) {
@@ -77,6 +85,8 @@ void Game::update(float dt) {
 		if (states == GAME_ACTIVE) {
 			render();
 		}
+
+		player->draw(*renderer);
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();

@@ -41,6 +41,8 @@ private:
 	std::vector<GameLevel> levels;
 	unsigned int level;
 
+	GameObject *player;
+
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game() {} //Destructor
