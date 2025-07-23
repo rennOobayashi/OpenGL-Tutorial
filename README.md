@@ -24,3 +24,6 @@ My head hurts even when I don't look at a digital device. I still don't know why
 
 7/1
 gameクラスのコンストラクタの初期化を忘れてしまいました。
+
+7/23
+コンピューターシステムのグラフィックカードをAMDのRX9060XTに変更しました。 しかし、直前まで使用したグラフィックカードがNVIDIAのRTX4060だったので、現在グラフィックドライバーの問題があります。 現在はAMD cleanup utilityとDDUですべてのドライバーを削除した後、AMD Adrenalinを再インストールしてすぐには問題を解決しましたが、今後アップデートが遅れる可能性がありますのでご了承ください。
