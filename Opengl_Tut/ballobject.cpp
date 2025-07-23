@@ -18,11 +18,11 @@ glm::vec2 Ball::move(float dt, unsigned int window_width) {
 		}
 		else if (position.x + size.x >= window_width) {
 			velocity.x = -velocity.x;
-			position.x = 0.0f;
+			position.x = window_width - size.x;
 		}
 		//Check if the wall collides width the windows on the top
 		if (position.y <= 0.0f) {
-			velocity.y = velocity.y;
+			velocity.y = -velocity.y;
 			position.y = 0.0f;
 		}
 	}

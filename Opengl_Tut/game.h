@@ -6,6 +6,7 @@
 #include "resourcemanager.h"
 #include "gamelevel.h"
 #include "texture.h"
+#include "ballobject.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -44,7 +45,7 @@ private:
 	unsigned int level;
 
 	GameObject *player;
-
+	Ball* ball;
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game(); //Destructor
