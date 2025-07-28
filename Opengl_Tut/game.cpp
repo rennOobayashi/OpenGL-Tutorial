@@ -98,6 +98,7 @@ void Game::update() {
 
 		process_input(window, delta_time);
 		ball->move(delta_time, width);
+		do_collisions();
 
 		if (states == GAME_ACTIVE) {
 			render();
@@ -156,6 +157,27 @@ void Game::process_input(GLFWwindow* window, float dt) {
 			//Once you reach the right end, you won't move any further to the right.
 			if (player->position.x <= width - player->size.x) {
 				ball->stuck = false;
+			}
+		}
+	}
+}
+
+bool Game::check_collision(GameObject &object1, GameObject &object2) {
+	bool collision_x = object1.position.x + object1.size.x >= object2.position.x &&
+		object2.position.x + object2.size.x >= object1.position.x;
+	bool collision_y = object1.position.y + object1.size.y >= object2.position.y &&
+		object2.position.y + object2.size.y >= object1.position.y;
+
+	return collision_x && collision_y;
+}
+
+void Game::do_collisions() {
+	for (GameObject& box : levels[level].bricks) {
+		if (!box.destroyed) {
+			if (check_collision(*ball, box)) {
+				if (!box.is_solid) {
+					box.destroyed = true;
+				}
 			}
 		}
 	}

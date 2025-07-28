@@ -25,6 +25,7 @@ glm::vec2 Ball::move(float dt, unsigned int window_width) {
 			velocity.y = -velocity.y;
 			position.y = 0.0f;
 		}
+
 	}
 
 	return position;

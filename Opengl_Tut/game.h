@@ -46,6 +46,8 @@ private:
 
 	GameObject *player;
 	Ball* ball;
+
+	bool check_collision(GameObject &object1, GameObject &object2);
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game(); //Destructor
@@ -53,6 +55,7 @@ public:
 	void process_input(GLFWwindow* window, float dt);
 	void update();
 	void render();
+	void do_collisions();
 };
 
 #endif
