@@ -80,7 +80,7 @@ void Game::init() {
 	player = new GameObject(player_pos, player_size, ResourceManager::get_texture("player"));
 
 	glm::vec2 ball_pos = player_pos + glm::vec2(
-		player_size.x / 2.0f - ball_radius, -ball_radius * 2.0f);
+		player_size.x / 2.0f - ball_radius, -ball_radius * 2.5f);
 	ball = new Ball(ball_pos, ball_radius, initial_ball_velcocity, ResourceManager::get_texture("ball"));
 }
 
@@ -180,5 +180,9 @@ void Game::do_collisions() {
 				}
 			}
 		}
+	}
+
+	if (check_collision(*ball, *player)) {
+		ball->velocity.y = -ball->velocity.y;
 	}
 }
