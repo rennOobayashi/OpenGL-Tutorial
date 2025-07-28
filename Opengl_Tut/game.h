@@ -38,6 +38,7 @@ private:
 	unsigned int tex1;
 	float delta_time;
 	float last_frame;
+	float speed;
 
 	GLFWwindow* window;
 	SpriteRenderer* renderer;

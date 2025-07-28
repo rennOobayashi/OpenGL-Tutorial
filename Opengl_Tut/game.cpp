@@ -82,6 +82,7 @@ void Game::init() {
 	glm::vec2 ball_pos = player_pos + glm::vec2(
 		player_size.x / 2.0f - ball_radius, -ball_radius * 2.5f);
 	ball = new Ball(ball_pos, ball_radius, initial_ball_velcocity, ResourceManager::get_texture("ball"));
+	speed = 1.0f;
 }
 
 void Game::update() {
@@ -97,7 +98,7 @@ void Game::update() {
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		process_input(window, delta_time);
-		ball->move(delta_time, width);
+		ball->move(delta_time, width, speed);
 		do_collisions();
 
 		if (states == GAME_ACTIVE) {
@@ -177,6 +178,7 @@ void Game::do_collisions() {
 			if (check_collision(*ball, box)) {
 				if (!box.is_solid) {
 					box.destroyed = true;
+					speed += 0.025f;
 				}
 			}
 		}

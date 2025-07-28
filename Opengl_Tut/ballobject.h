@@ -16,7 +16,7 @@ public:
 	Ball();
 	Ball(glm::vec2 position, float radius, glm::vec2 velocity, Texture sprite);
 
-	glm::vec2 move(float dt, unsigned int window_width);
+	glm::vec2 move(float dt, unsigned int window_width, float speed);
 	void reset(glm::vec2 position, glm::vec2 velocity);
 };
 
