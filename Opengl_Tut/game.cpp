@@ -233,6 +233,21 @@ void Game::do_collisions() {
 			}
 		}
 	}
+
+	Collision result = check_collision(*ball, *player);
+
+	if (!ball->stuck && std::get<0>(result)) {
+		//check where it hit the player and change velocity where it hit the player's paddle
+		float center_player = player->position.x + player->size.x / 2.0f;
+		float distance = (ball->position.x + ball_radius) - center_player;
+		float percentage = distance / (player->size.x / 2.0f);
+		float strength = 2.0f;
+
+		glm::vec2 before_velocity = ball->velocity;
+		ball->velocity.x = initial_ball_velcocity.x * percentage * strength;
+		ball->velocity.y = -ball->velocity.y;
+		ball->velocity = glm::normalize(ball->velocity) * glm::length(before_velocity);
+	}
 }
 
 Direction Game::vector_direction(glm::vec2 target) {
