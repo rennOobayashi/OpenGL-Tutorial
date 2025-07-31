@@ -198,7 +198,7 @@ void Game::do_collisions() {
 			if (std::get<0>(collision)) {
 				if (!box.is_solid) {
 					box.destroyed = true;
-					speed += 0.025f;
+					speed += 0.035f;
 				}
 
 				Direction dir = std::get<1>(collision);
@@ -244,8 +244,9 @@ void Game::do_collisions() {
 		float strength = 2.0f;
 
 		glm::vec2 before_velocity = ball->velocity;
-		ball->velocity.x = initial_ball_velcocity.x * percentage * strength;
-		ball->velocity.y = -ball->velocity.y;
+		//ball->velocity.x = initial_ball_velcocity.x * percentage * strength;
+		//ball.velocity.y = -ball.velocity.y;
+		ball->velocity.y = -1.0f * abs(ball->velocity.y);
 		ball->velocity = glm::normalize(ball->velocity) * glm::length(before_velocity);
 	}
 }
