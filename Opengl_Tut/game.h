@@ -1,7 +1,6 @@
 #ifndef GAME_H
 #define GAME_H
 
-#include "camera.h"
 #include "spriterenderer.h"
 #include "resourcemanager.h"
 #include "gamelevel.h"
@@ -29,11 +28,19 @@ enum GameState {
 	GAME_WIN     //2
 };
 
+enum Direction {
+	UP, 
+	DOWN, 
+	LEFT, 
+	RIGHT
+};
+
+typedef std::tuple<bool, Direction, glm::vec2> Collision;
+
 class Game 
 {
 private:
 	GameState states;
-	bool keys[1024];
 	unsigned int width, height;
 	unsigned int tex1;
 	float delta_time;
@@ -48,7 +55,9 @@ private:
 	GameObject *player;
 	Ball* ball;
 
-	bool check_collision(GameObject &object1, GameObject &object2);
+	Collision check_collision(Ball &ball, GameObject &object);
+
+	Direction vector_direction(glm::vec2 target);
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game(); //Destructor

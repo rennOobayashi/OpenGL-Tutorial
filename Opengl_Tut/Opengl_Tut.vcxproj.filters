@@ -24,15 +24,6 @@
     <ClCompile Include="stb_image.c">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="mesh.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="model.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="camera.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="game.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -60,15 +51,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="stb_image.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="mesh.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="model.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="camera.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="game.h">

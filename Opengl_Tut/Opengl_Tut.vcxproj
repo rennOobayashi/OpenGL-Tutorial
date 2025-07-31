@@ -135,13 +135,10 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
     <ClCompile Include="ballobject.cpp" />
-    <ClCompile Include="camera.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gamelevel.cpp" />
     <ClCompile Include="gameobject.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="mesh.cpp" />
-    <ClCompile Include="model.cpp" />
     <ClCompile Include="resourcemanager.cpp" />
     <ClCompile Include="spriterenderer.cpp" />
     <ClCompile Include="stb_image.c" />
@@ -149,12 +146,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ballobject.h" />
-    <ClInclude Include="camera.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="gamelevel.h" />
     <ClInclude Include="gameobject.h" />
-    <ClInclude Include="mesh.h" />
-    <ClInclude Include="model.h" />
     <ClInclude Include="resourcemanager.h" />
     <ClInclude Include="shader.h" />
     <ClInclude Include="spriterenderer.h" />

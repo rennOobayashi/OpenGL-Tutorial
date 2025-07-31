@@ -8,12 +8,14 @@ const glm::vec2 initial_ball_velcocity(100.0f, -350.0f);
 const float ball_radius = 12.5f;
 
 Game::Game(unsigned int _width, unsigned int _height) 
-	: states(GAME_ACTIVE), keys(), width(_width), height(_height) { }
+	: states(GAME_ACTIVE), width(_width), height(_height) { }
 
 Game::~Game() {
 	delete renderer;
 	delete player;
+	delete ball;
 }
+
 
 void Game::init() {
 	glfwInit();
@@ -163,28 +165,95 @@ void Game::process_input(GLFWwindow* window, float dt) {
 	}
 }
 
-bool Game::check_collision(GameObject &object1, GameObject &object2) {
-	bool collision_x = object1.position.x + object1.size.x >= object2.position.x &&
-		object2.position.x + object2.size.x >= object1.position.x;
-	bool collision_y = object1.position.y + object1.size.y >= object2.position.y &&
-		object2.position.y + object2.size.y >= object1.position.y;
+Collision Game::check_collision(Ball& ball, GameObject& object) {
+	//ball's center
+	glm::vec2 center(ball.position + ball.radius);
+	//calculate aabb info
+	glm::vec2 aabb_half_extents(object.size.x / 2.0f, object.size.y / 2.0f);
+	glm::vec2 aabb_center(object.position.x + aabb_half_extents.x, object.position.y + aabb_half_extents.y);
+	//get difference between ball's center and aabb's center
+	glm::vec2 difference = center - aabb_center;
+	glm::vec2 clamped = glm::clamp(difference, -aabb_half_extents, aabb_half_extents);
+	//get closest point on aabb to ball's center
+	glm::vec2 closest = aabb_center + clamped;
+	//search closest point and check if lengh < radius
+	difference = closest - center;
 
-	return collision_x && collision_y;
+	//<= is used when exactly touching
+	//but lengh < radius is used as < because it is in the last step of check collision
+	if (glm::length(difference) < ball.radius) {
+		return std::make_tuple(true, vector_direction(difference), difference);
+	}
+	else {
+		return std::make_tuple(false, UP, glm::vec2(0.0f));
+	}
+
 }
 
 void Game::do_collisions() {
 	for (GameObject& box : levels[level].bricks) {
 		if (!box.destroyed) {
-			if (check_collision(*ball, box)) {
+			Collision collision = check_collision(*ball, box);
+			//if collided
+			if (std::get<0>(collision)) {
 				if (!box.is_solid) {
 					box.destroyed = true;
 					speed += 0.025f;
 				}
+
+				Direction dir = std::get<1>(collision);
+
+				glm::vec2 diff_vec = std::get<2>(collision);
+
+				if (dir == LEFT || dir == RIGHT) {
+					ball->velocity.x = -ball->velocity.x;
+
+					//relocate
+					float penetration = ball->radius - std::abs(diff_vec.x);
+
+					if (dir == LEFT) {
+						ball->position.x += penetration; //move ball right
+					}
+					else {
+						ball->position.x -= penetration; //move ball left
+					}
+				}
+				else {
+					ball->velocity.y = -ball->velocity.y;
+
+					float penetration = ball->radius - std::abs(diff_vec.x);
+
+					if (dir == UP) {
+						ball->position.y -= penetration;  //move ball down
+					}
+					else {
+						ball->position.y += penetration;  //move ball up
+					}
+				}
 			}
 		}
 	}
+}
 
-	if (check_collision(*ball, *player)) {
-		ball->velocity.y = -ball->velocity.y;
+Direction Game::vector_direction(glm::vec2 target) {
+	glm::vec2 compass[] = {
+		glm::vec2( 0.0f,  1.0f), //up
+		glm::vec2( 0.0f, -1.0f), //down
+		glm::vec2(-1.0f,  0.0f), //left
+		glm::vec2( 1.0f,  0.0f)  //right
+	};
+	float max = 0.0f;
+	unsigned int best_match = -1;
+
+	//brick's kita, minami, nishi, higashi
+	for (unsigned int i = 0; i < 4; i++) {
+		float dot_product = glm::dot(glm::normalize(target), compass[i]);
+
+		if (dot_product > max) {
+			max = dot_product;
+			best_match = i;
+		}
 	}
+
+	return (Direction)best_match;
 }
