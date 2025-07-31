@@ -109,6 +109,10 @@ void Game::update() {
 
 		player->draw(*renderer);
 
+		if (ball->position.y >= height) {
+			reset();
+		}
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -198,7 +202,7 @@ void Game::do_collisions() {
 			if (std::get<0>(collision)) {
 				if (!box.is_solid) {
 					box.destroyed = true;
-					speed += 0.035f;
+					speed += 0.025f;
 				}
 
 				Direction dir = std::get<1>(collision);
@@ -244,7 +248,7 @@ void Game::do_collisions() {
 		float strength = 2.0f;
 
 		glm::vec2 before_velocity = ball->velocity;
-		//ball->velocity.x = initial_ball_velcocity.x * percentage * strength;
+		ball->velocity.x = initial_ball_velcocity.x * percentage * strength;
 		//ball.velocity.y = -ball.velocity.y;
 		ball->velocity.y = -1.0f * abs(ball->velocity.y);
 		ball->velocity = glm::normalize(ball->velocity) * glm::length(before_velocity);
@@ -272,4 +276,21 @@ Direction Game::vector_direction(glm::vec2 target) {
 	}
 
 	return (Direction)best_match;
+}
+
+void Game::reset() {
+	switch (level) {
+		case 0: levels[0].load("level/1.lvl", width, height / 2);
+			break;
+		case 1: levels[1].load("level/2.lvl", width, height / 2);
+			break;
+		case 2: levels[2].load("level/3.lvl", width, height / 2);
+			break;
+		case 3: levels[3].load("level/4.lvl", width, height / 2);
+			break;
+	}
+
+	player->size = player_size;
+	player->position = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
+	ball->reset(player->position + glm::vec2(player_size.x / 2.0f - ball_radius, -(ball_radius * 2.0f)), initial_ball_velcocity);
 }

@@ -58,14 +58,16 @@ private:
 	Collision check_collision(Ball &ball, GameObject &object);
 
 	Direction vector_direction(glm::vec2 target);
+
+	void reset();
+	void do_collisions();
+	void render();
+	void process_input(GLFWwindow* window, float dt);
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game(); //Destructor
 	void init();
-	void process_input(GLFWwindow* window, float dt);
 	void update();
-	void render();
-	void do_collisions();
 };
 
 #endif
