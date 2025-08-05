@@ -6,7 +6,7 @@ out vec4 particle_color;
 
 uniform mat4 projection;
 uniform vec2 offset;
-uniform vec2 color;
+uniform vec4 color;
 
 void main()
 {

@@ -56,6 +56,7 @@ private:
 	GameObject *player;
 	Ball* ball;
 
+	ParticleGenerator* particles;
 
 	Collision check_collision(Ball &ball, GameObject &object);
 	Direction vector_direction(glm::vec2 target);

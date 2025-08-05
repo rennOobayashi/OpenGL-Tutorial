@@ -14,6 +14,7 @@ Game::~Game() {
 	delete renderer;
 	delete player;
 	delete ball;
+	delete particles;
 }
 
 
@@ -44,13 +45,12 @@ void Game::init() {
 	glm::mat4 projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
 
 	ResourceManager::load_shader("geofragver/vertex.vs", "geofragver/fragment.fs", nullptr, "sprite");
+	ResourceManager::load_shader("geofragver/particle_vertex.vs", "geofragver/particle_fragment.fs", nullptr, "particle");
+
 	ResourceManager::get_shader("sprite").use().set_int("sprite", 0);
 	ResourceManager::get_shader("sprite").use().set_mat4("projection", projection);
-
-	Shader shader = ResourceManager::get_shader("sprite");
-	ResourceManager::load_texture("texture/watashi.PNG", true, "face");
-
-	renderer = new SpriteRenderer(shader);
+	ResourceManager::get_shader("particle").use().set_int("sprite", 0);
+	ResourceManager::get_shader("particle").use().set_mat4("projection", projection);
 
 	//texture
 	ResourceManager::load_texture("texture/floor.png", true, "background");
@@ -58,6 +58,7 @@ void Game::init() {
 	ResourceManager::load_texture("texture/watashi.PNG", true, "block");
 	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
+	ResourceManager::load_texture("texture/particle.png", true, "particle");
 
 	//levels
 	GameLevel level1;
@@ -87,6 +88,9 @@ void Game::init() {
 	speed = 1.2f;
 	player_speed = 1.5f;
 
+	Shader shader = ResourceManager::get_shader("sprite");
+	renderer = new SpriteRenderer(shader);
+	particles = new ParticleGenerator(ResourceManager::get_shader("particle"), ResourceManager::get_texture("particle"), 400);
 }
 
 void Game::update() {
@@ -105,12 +109,11 @@ void Game::update() {
 		process_input(window, delta_time);
 		ball->move(delta_time, width, speed);
 		do_collisions();
+		particles->update(delta_time, *ball, 2, glm::vec2(ball->radius / 2.0f));
 
 		if (states == GAME_ACTIVE) {
 			render();
 		}
-
-		player->draw(*renderer);
 
 		if (ball->position.y >= height) {
 			reset();
@@ -128,9 +131,10 @@ void Game::update() {
 void Game::render() {
 	Texture tex = ResourceManager::get_texture("background");
 	renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
-
 	levels[level].draw(*renderer);
 
+	player->draw(*renderer);
+	particles->draw();
 	ball->draw(*renderer);
 }
 

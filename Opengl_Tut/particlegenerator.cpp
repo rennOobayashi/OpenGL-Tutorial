@@ -1,7 +1,7 @@
 #include "particlegenerator.h"
 
-ParticleGenerator::ParticleGenerator(Shader shader, Texture texture, unsigned int amount) 
-	: shader(shader), texture(texture), amount(amount) {
+ParticleGenerator::ParticleGenerator(Shader _shader, Texture _texture, unsigned int _amount) 
+	: shader(_shader), texture(_texture), amount(_amount) {
 
 	init();
 }
@@ -20,28 +20,27 @@ void ParticleGenerator::init() {
 
 	glGenVertexArrays(1, &pao);
 	glGenBuffers(1, &pbo);
+	glBindVertexArray(pao);
 	glBindBuffer(GL_ARRAY_BUFFER, pbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(particle_quad), particle_quad, GL_STATIC_DRAW);
 	glEnableVertexAttribArray(0);
 	glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
 	glBindVertexArray(0);
 
-	for (unsigned int i = 0; i < nr_particles; ++i) {
+	for (unsigned int i = 0; i < amount; ++i) {
 		particles.push_back(Particle());
 	}
 }
 
 void ParticleGenerator::update(float dt, GameObject& object, unsigned int new_particles, glm::vec2 offset) {
-	unsigned int nr_new_particles = 2;
-
 	//add new particle
-	for (unsigned int i = 0; i < nr_new_particles; ++i) {
+	for (unsigned int i = 0; i < new_particles; ++i) {
 		int unused_particle = first_unused_particle();
 		respawn_particle(particles[unused_particle], object, offset);
 	}
 
 	//particle update
-	for (unsigned int i = 0; i < nr_particles; ++i) {
+	for (unsigned int i = 0; i < amount; ++i) {
 		Particle& par = particles[i];
 		par.life -= dt;
 
@@ -56,7 +55,7 @@ void ParticleGenerator::update(float dt, GameObject& object, unsigned int new_pa
 unsigned int ParticleGenerator::first_unused_particle() {
 	//saerch from the last used particle
 	//this will be faster than searching from the beginning
-	for (unsigned int i = last_used_particle; i < nr_particles; ++i) {
+	for (unsigned int i = last_used_particle; i < amount; ++i) {
 		if (particles[i].life <= 0.0f) {
 			last_used_particle = i;
 			return i;
@@ -77,12 +76,11 @@ unsigned int ParticleGenerator::first_unused_particle() {
 }
 
 void ParticleGenerator::respawn_particle(Particle& particle, GameObject& object, glm::vec2 offset) {
-	float random = ((rand() % 100) - 50) / 10.0f;
-	float rcolor = 0.5f + ((rand() % 100) / 100.0f);
+	float random = ((rand() % 100) - 50) / 7.0f;
+	float rcolor = 0.7f + ((rand() % 100) / 100.0f);
 	particle.position = object.position + random + offset;
-	//particle.color = glm::vec4(glm::vec3(rcolor), 1.0f);
 	particle.color = glm::vec4(rcolor, rcolor, rcolor, 1.0f);
-	particle.life = 1.0f;
+	particle.life = 0.15f;
 	particle.velocity = object.velocity * 0.1f;
 }
 
