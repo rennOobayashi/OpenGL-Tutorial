@@ -7,6 +7,7 @@
 #include "texture.h"
 #include "ballobject.h"
 #include "particlegenerator.h"
+#include "postprocessing.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -47,6 +48,7 @@ private:
 	float delta_time;
 	float last_frame;
 	float speed, player_speed;
+	float shake_time;
 
 	GLFWwindow* window;
 	SpriteRenderer* renderer;
@@ -57,6 +59,7 @@ private:
 	Ball* ball;
 
 	ParticleGenerator* particles;
+	PostProcessor* postprocessor;
 
 	Collision check_collision(Ball &ball, GameObject &object);
 	Direction vector_direction(glm::vec2 target);

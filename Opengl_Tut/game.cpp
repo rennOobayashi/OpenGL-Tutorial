@@ -15,6 +15,7 @@ Game::~Game() {
 	delete player;
 	delete ball;
 	delete particles;
+	delete postprocessor;
 }
 
 
@@ -46,6 +47,7 @@ void Game::init() {
 
 	ResourceManager::load_shader("geofragver/vertex.vs", "geofragver/fragment.fs", nullptr, "sprite");
 	ResourceManager::load_shader("geofragver/particle_vertex.vs", "geofragver/particle_fragment.fs", nullptr, "particle");
+	ResourceManager::load_shader("geofragver/postprocessing_vertex.vs", "geofragver/postprocessing_fragment.fs", nullptr, "postprocessor");
 
 	ResourceManager::get_shader("sprite").use().set_int("sprite", 0);
 	ResourceManager::get_shader("sprite").use().set_mat4("projection", projection);
@@ -75,7 +77,7 @@ void Game::init() {
 	levels.push_back(level2);
 	levels.push_back(level3);
 	levels.push_back(level4);
-	level = 0;
+	level = 3;
 	states = GAME_ACTIVE;
 
 	glm::vec2 player_pos = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
@@ -89,8 +91,12 @@ void Game::init() {
 	player_speed = 1.5f;
 
 	Shader shader = ResourceManager::get_shader("sprite");
+	Shader pshader = ResourceManager::get_shader("postprocessor");
 	renderer = new SpriteRenderer(shader);
 	particles = new ParticleGenerator(ResourceManager::get_shader("particle"), ResourceManager::get_texture("particle"), 400);
+	postprocessor = new PostProcessor(pshader, width, height);
+
+	shake_time = 0.0f;
 }
 
 void Game::update() {
@@ -119,6 +125,12 @@ void Game::update() {
 			reset();
 		}
 
+		if (shake_time > 0.0f) {
+			shake_time -= delta_time;
+		}
+		else {
+			postprocessor->shake = false;
+		}
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -129,6 +141,8 @@ void Game::update() {
 
 
 void Game::render() {
+	postprocessor->begin_render();
+
 	Texture tex = ResourceManager::get_texture("background");
 	renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
 	levels[level].draw(*renderer);
@@ -136,6 +150,10 @@ void Game::render() {
 	player->draw(*renderer);
 	particles->draw();
 	ball->draw(*renderer);
+
+	postprocessor->end_render();
+
+	postprocessor->render(glfwGetTime());
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -201,6 +219,7 @@ Collision Game::check_collision(Ball& ball, GameObject& object) {
 
 }
 
+
 void Game::do_collisions() {
 	for (GameObject& box : levels[level].bricks) {
 		if (!box.destroyed) {
@@ -210,6 +229,10 @@ void Game::do_collisions() {
 				if (!box.is_solid) {
 					box.destroyed = true;
 					speed += 0.025f;
+				}
+				else {
+					shake_time = 0.05f;
+					postprocessor->shake = true;
 				}
 
 				Direction dir = std::get<1>(collision);

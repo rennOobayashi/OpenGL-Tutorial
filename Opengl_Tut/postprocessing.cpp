@@ -7,7 +7,7 @@ PostProcessor::PostProcessor(Shader _shader, unsigned int _width, unsigned int _
 	glGenRenderbuffers(1, &rbo);
 
 	glBindFramebuffer(GL_FRAMEBUFFER, msfbo);
-	glBindFramebuffer(GL_RENDERBUFFER, rbo);
+	glBindRenderbuffer(GL_RENDERBUFFER, rbo);
 	glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_RGB, width, height);
 	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rbo);
 
@@ -90,7 +90,7 @@ void PostProcessor::begin_render() {
 
 void PostProcessor::end_render() {
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, msfbo);
-	glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, fbo);
 	glBlitFramebuffer(0, 0, width, height, 0, 0, width, height, GL_COLOR_BUFFER_BIT, GL_NEAREST);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
