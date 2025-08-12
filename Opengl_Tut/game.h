@@ -50,7 +50,6 @@ private:
 	float last_frame;
 	float speed, player_speed;
 	float shake_time;
-	float item_speed;
 
 	GLFWwindow* window;
 	SpriteRenderer* renderer;
@@ -65,6 +64,7 @@ private:
 
 	std::vector<Upgrade> upgrades;
 
+	bool check_collision(GameObject& ball, GameObject& object);
 	Collision check_collision(Ball &ball, GameObject &object);
 	Direction vector_direction(glm::vec2 target);
 
@@ -74,6 +74,7 @@ private:
 	void process_input(GLFWwindow* window, float dt);
 	void spawn_upgrade(GameObject &object);
 	void update_upgrades(float dt);
+	void activate_upgrade(Upgrade& upgrade);
 public:
 	Game(unsigned int _width, unsigned int _height);
 	~Game(); //Destructor

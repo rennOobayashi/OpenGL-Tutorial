@@ -12,6 +12,8 @@ class Ball : public GameObject
 public:
 	float radius;
 	bool stuck;
+	bool sticky;
+	bool passthrough;
 
 	Ball();
 	Ball(glm::vec2 position, float radius, glm::vec2 velocity, Texture sprite);

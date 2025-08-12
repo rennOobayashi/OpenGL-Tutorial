@@ -61,12 +61,13 @@ void Game::init() {
 	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
 	ResourceManager::load_texture("texture/particle.png", true, "particle");
-	ResourceManager::load_texture("texture/upgrade/speed.png", true, "speed");
-	ResourceManager::load_texture("texture/upgrade/sticky.png", true, "sticky");
-	ResourceManager::load_texture("texture/upgrade/passthrough.png", true, "passthrough");
-	ResourceManager::load_texture("texture/upgrade/increase.png", true, "increase");
-	ResourceManager::load_texture("texture/upgrade/confuse.png", true, "confuse");
-	ResourceManager::load_texture("texture/upgrade/chaos.png", true, "chaos");
+
+	ResourceManager::load_texture("texture/speed.png", true, "speed");
+	ResourceManager::load_texture("texture/sticky.png", true, "sticky");
+	ResourceManager::load_texture("texture/passthrough.png", true, "passthrough");
+	ResourceManager::load_texture("texture/increase.png", true, "increase");
+	ResourceManager::load_texture("texture/confuse.png", true, "confuse");
+	ResourceManager::load_texture("texture/chaos.png", true, "chaos");
 
 	//levels
 	GameLevel level1;
@@ -122,6 +123,7 @@ void Game::update() {
 		ball->move(delta_time, width, speed);
 		do_collisions();
 		particles->update(delta_time, *ball, 2, glm::vec2(ball->radius / 2.0f));
+		update_upgrades(delta_time);
 
 		if (states == GAME_ACTIVE) {
 			render();
@@ -154,6 +156,14 @@ void Game::render() {
 	levels[level].draw(*renderer);
 
 	player->draw(*renderer);
+	
+	for (Upgrade& upgrade : upgrades) {
+		if (!upgrade.destroyed) {
+			//std::cout << "draw" << std::endl;
+			upgrade.draw(*renderer);
+		}
+	}
+
 	particles->draw();
 	ball->draw(*renderer);
 
@@ -200,6 +210,16 @@ void Game::process_input(GLFWwindow* window, float dt) {
 	}
 }
 
+bool Game::check_collision(GameObject& object1, GameObject& object2) // AABB - AABB collision
+{
+	bool collisionX = object1.position.x + object1.size.x >= object2.position.x &&
+		object2.position.x + object2.size.x >= object1.position.x;
+	bool collisionY = object1.position.y + object1.size.y >= object2.position.y &&
+		object2.position.y + object2.size.y >= object1.position.y;
+
+	return collisionX && collisionY;
+}
+
 Collision Game::check_collision(Ball& ball, GameObject& object) {
 	//ball's center
 	glm::vec2 center(ball.position + ball.radius);
@@ -233,6 +253,7 @@ void Game::do_collisions() {
 			//if collided
 			if (std::get<0>(collision)) {
 				if (!box.is_solid) {
+					spawn_upgrade(box);
 					box.destroyed = true;
 					speed += 0.01f;
 				}
@@ -245,35 +266,51 @@ void Game::do_collisions() {
 
 				glm::vec2 diff_vec = std::get<2>(collision);
 
-				if (dir == LEFT || dir == RIGHT) {
-					ball->velocity.x = -ball->velocity.x;
+				if (!(ball->passthrough && !box.is_solid)) {
+					if (dir == LEFT || dir == RIGHT) {
+						ball->velocity.x = -ball->velocity.x;
 
-					//relocate
-					float penetration = ball->radius - std::abs(diff_vec.x);
+						//relocate
+						float penetration = ball->radius - std::abs(diff_vec.x);
 
-					if (dir == LEFT) {
-						ball->position.x += penetration; //move ball right
+						if (dir == LEFT) {
+							ball->position.x += penetration; //move ball right
+						}
+						else {
+							ball->position.x -= penetration; //move ball left
+						}
 					}
 					else {
-						ball->position.x -= penetration; //move ball left
-					}
-				}
-				else {
-					ball->velocity.y = -ball->velocity.y;
+						ball->velocity.y = -ball->velocity.y;
 
-					float penetration = ball->radius - std::abs(diff_vec.x);
+						float penetration = ball->radius - std::abs(diff_vec.x);
 
-					if (dir == UP) {
-						ball->position.y -= penetration;  //move ball down
-					}
-					else {
-						ball->position.y += penetration;  //move ball up
+						if (dir == UP) {
+							ball->position.y -= penetration;  //move ball down
+						}
+						else {
+							ball->position.y += penetration;  //move ball up
+						}
 					}
 				}
 			}
 		}
 	}
-
+	
+	for (Upgrade& upgrade : upgrades) {
+		if (!upgrade.destroyed) {
+			if (upgrade.position.y >= height) {
+				upgrade.destroyed = true;
+			}
+			if (check_collision(*player, upgrade)) {
+				//std::cout << "activated" << std::endl;
+				activate_upgrade(upgrade);
+				upgrade.destroyed = true;
+				upgrade.activated = true;
+			}
+		}
+	}
+	
 	Collision result = check_collision(*ball, *player);
 
 	if (!ball->stuck && std::get<0>(result)) {
@@ -288,6 +325,7 @@ void Game::do_collisions() {
 		//ball.velocity.y = -ball.velocity.y;
 		ball->velocity.y = -1.0f * abs(ball->velocity.y);
 		ball->velocity = glm::normalize(ball->velocity) * glm::length(before_velocity);
+		ball->stuck = ball->sticky;
 	}
 }
 
@@ -329,6 +367,7 @@ void Game::reset() {
 	player->size = player_size;
 	player->position = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
 	ball->reset(player->position + glm::vec2(player_size.x / 2.0f - ball_radius, -(ball_radius * 2.0f)), initial_ball_velcocity);
+	upgrades.clear();
 }
 
 bool should_spawn(unsigned int chance) {
@@ -337,22 +376,114 @@ bool should_spawn(unsigned int chance) {
 }
 
 void Game::spawn_upgrade(GameObject& object) {
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("speed", glm::vec3(0.3f, 0.3f, 0.7f), 0.0f, object.position, ResourceManager::get_texture("speed")));
+	Texture tex;
+	//0.0f - mugen
+	if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("speed");
+		upgrades.push_back(Upgrade("speed", glm::vec3(0.3f, 0.3f, 0.7f), 0.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("sticky", glm::vec3(0.6f, 0.7f, 0.1f), 20.0f, object.position, ResourceManager::get_texture("sticky")));
+	else if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("sticky");
+		upgrades.push_back(Upgrade("sticky", glm::vec3(0.6f, 0.7f, 0.1f), 20.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("passthrough", glm::vec3(0.6f, 0.05f, 0.2f), 10.0f, object.position, ResourceManager::get_texture("passthrough")));
+	else if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("passthrough");
+		upgrades.push_back(Upgrade("passthrough", glm::vec3(0.6f, 0.05f, 0.2f), 10.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("increase", glm::vec3(0.9f, 0.9f, 0.9f), 0.0f, object.position, ResourceManager::get_texture("incease")));
+	else if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("increase");
+		upgrades.push_back(Upgrade("increase", glm::vec3(0.9f, 0.9f, 0.9f), 0.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("confuse", glm::vec3(0.7f, 0.1f, 0.6f), 15.0f, object.position, ResourceManager::get_texture("confuse")));
+	else if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("confuse");
+		upgrades.push_back(Upgrade("confuse", glm::vec3(0.8f, 0.1, 0.7f), 5.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
-	if (should_spawn(50)) {
-		upgrades.push_back(Upgrade("chaos", glm::vec3(0.2f, 0.8f, 0.1f), 15.0f, object.position, ResourceManager::get_texture("chaos")));
+	else if (should_spawn(10)) {
+		tex = ResourceManager::get_texture("chaos");
+		upgrades.push_back(Upgrade("chaos", glm::vec3(0.2f, 0.8f, 0.1f), 5.0f, object.position + glm::vec2(13.5f, 15.0f), tex));
 	}
+}
+
+void Game::activate_upgrade(Upgrade &upgrade) {
+	if (upgrade.type == "speed") {
+		ball->velocity *= 1.2f;
+	}
+	else if (upgrade.type == "sticky") {
+		ball->sticky = true;
+		player->color = glm::vec3(0.6f, 0.7f, 0.1f);
+	}
+	else if (upgrade.type == "passthrough") {
+		ball->passthrough = true;
+		player->color = glm::vec3(0.6f, 0.05f, 0.2f);
+	}
+	else if (upgrade.type == "increase") {
+		player->size.x += 50.0f;
+	}
+	else if (upgrade.type == "confuse") {
+		if (!postprocessor->confuse) {
+			postprocessor->confuse = true;
+		}
+	}
+	else if (upgrade.type == "chaos") {
+		if (!postprocessor->chaos) {
+			postprocessor->chaos = true;
+		}
+	}
+}
+
+bool is_other_upgrade_active(std::vector<Upgrade>& upgrades, std::string type) {
+	for (const Upgrade upgrade : upgrades) {
+		if (upgrade.activated) {
+			if (upgrade.type == type) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+
+void Game::update_upgrades(float dt) {
+	for (Upgrade &upgrade : upgrades) {
+		//std::cout << upgrade.position.y << std::endl;
+		upgrade.position.y += 100 * dt;
+
+		if (upgrade.activated) {
+			//std::cout << "a";
+			upgrade.duration -= dt;
+
+			if (upgrade.duration <= 0.0f) {
+				//std::cout << "erase";
+				upgrade.activated = false;
+				if (upgrade.type == "sticky") {
+					//When eat two or more of the item
+					if (!is_other_upgrade_active(upgrades, "sticky")) {
+						ball->sticky = false;
+						player->color = glm::vec3(1.0f);
+					}
+				}
+				else if (upgrade.type == "passthrough") {
+					if (!is_other_upgrade_active(upgrades, "passthrough")) {
+						ball->passthrough = false;
+						player->color = glm::vec3(1.0f);
+					}
+				}
+				else if (upgrade.type == "confuse") {
+					if (!is_other_upgrade_active(upgrades, "confuse")) {
+						postprocessor->confuse = false;
+					}
+				}
+				else if (upgrade.type == "chaos") {
+					if (!is_other_upgrade_active(upgrades, "chaos")) {
+						postprocessor->chaos = false;
+					}
+				}
+			}
+		}
+	}
+
+	//Erase the expired upgrade
+	upgrades.erase(std::remove_if(upgrades.begin(), upgrades.end(),
+		[](const Upgrade& upgrade) {
+			return upgrade.destroyed && !upgrade.activated;
+		}), upgrades.end());
 }
