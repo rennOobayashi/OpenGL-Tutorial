@@ -61,6 +61,12 @@ void Game::init() {
 	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
 	ResourceManager::load_texture("texture/particle.png", true, "particle");
+	ResourceManager::load_texture("texture/upgrade/speed.png", true, "speed");
+	ResourceManager::load_texture("texture/upgrade/sticky.png", true, "sticky");
+	ResourceManager::load_texture("texture/upgrade/passthrough.png", true, "passthrough");
+	ResourceManager::load_texture("texture/upgrade/increase.png", true, "increase");
+	ResourceManager::load_texture("texture/upgrade/confuse.png", true, "confuse");
+	ResourceManager::load_texture("texture/upgrade/chaos.png", true, "chaos");
 
 	//levels
 	GameLevel level1;
@@ -228,7 +234,7 @@ void Game::do_collisions() {
 			if (std::get<0>(collision)) {
 				if (!box.is_solid) {
 					box.destroyed = true;
-					speed += 0.025f;
+					speed += 0.01f;
 				}
 				else {
 					shake_time = 0.05f;
@@ -323,4 +329,30 @@ void Game::reset() {
 	player->size = player_size;
 	player->position = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
 	ball->reset(player->position + glm::vec2(player_size.x / 2.0f - ball_radius, -(ball_radius * 2.0f)), initial_ball_velcocity);
+}
+
+bool should_spawn(unsigned int chance) {
+	unsigned int random = rand() % chance;
+	return random == 0;
+}
+
+void Game::spawn_upgrade(GameObject& object) {
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("speed", glm::vec3(0.3f, 0.3f, 0.7f), 0.0f, object.position, ResourceManager::get_texture("speed")));
+	}
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("sticky", glm::vec3(0.6f, 0.7f, 0.1f), 20.0f, object.position, ResourceManager::get_texture("sticky")));
+	}
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("passthrough", glm::vec3(0.6f, 0.05f, 0.2f), 10.0f, object.position, ResourceManager::get_texture("passthrough")));
+	}
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("increase", glm::vec3(0.9f, 0.9f, 0.9f), 0.0f, object.position, ResourceManager::get_texture("incease")));
+	}
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("confuse", glm::vec3(0.7f, 0.1f, 0.6f), 15.0f, object.position, ResourceManager::get_texture("confuse")));
+	}
+	if (should_spawn(50)) {
+		upgrades.push_back(Upgrade("chaos", glm::vec3(0.2f, 0.8f, 0.1f), 15.0f, object.position, ResourceManager::get_texture("chaos")));
+	}
 }
