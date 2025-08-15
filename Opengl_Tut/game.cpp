@@ -62,12 +62,12 @@ void Game::init() {
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
 	ResourceManager::load_texture("texture/particle.png", true, "particle");
 
-	ResourceManager::load_texture("texture/speed.png", true, "speed");
-	ResourceManager::load_texture("texture/sticky.png", true, "sticky");
-	ResourceManager::load_texture("texture/passthrough.png", true, "passthrough");
-	ResourceManager::load_texture("texture/increase.png", true, "increase");
-	ResourceManager::load_texture("texture/confuse.png", true, "confuse");
-	ResourceManager::load_texture("texture/chaos.png", true, "chaos");
+	ResourceManager::load_texture("texture/upgrade/speed.png", true, "speed");
+	ResourceManager::load_texture("texture/upgrade/sticky.png", true, "sticky");
+	ResourceManager::load_texture("texture/upgrade/passthrough.png", true, "passthrough");
+	ResourceManager::load_texture("texture/upgrade/increase.png", true, "increase");
+	ResourceManager::load_texture("texture/upgrade/confuse.png", true, "confuse");
+	ResourceManager::load_texture("texture/upgrade/chaos.png", true, "chaos");
 
 	//levels
 	GameLevel level1;
@@ -104,6 +104,9 @@ void Game::init() {
 	postprocessor = new PostProcessor(pshader, width, height);
 
 	shake_time = 0.0f;
+
+	sound_engine = irrklang::createIrrKlangDevice();
+	sound_engine->play2D("breakout.mp3", true);
 }
 
 void Game::update() {
@@ -367,6 +370,25 @@ void Game::reset() {
 	player->size = player_size;
 	player->position = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
 	ball->reset(player->position + glm::vec2(player_size.x / 2.0f - ball_radius, -(ball_radius * 2.0f)), initial_ball_velcocity);
+
+
+	for (Upgrade& upgrade : upgrades) {
+		if (upgrade.type == "sticky") {
+			ball->sticky = false;
+			player->color = glm::vec3(1.0f);
+		}
+		else if (upgrade.type == "passthrough") {
+			ball->passthrough = false;
+			player->color = glm::vec3(1.0f);
+		}
+		else if (upgrade.type == "confuse") {
+			postprocessor->confuse = false;
+		}
+		else if (upgrade.type == "chaos") {
+			postprocessor->chaos = false;
+		}
+	}
+
 	upgrades.clear();
 }
 
@@ -443,6 +465,43 @@ bool is_other_upgrade_active(std::vector<Upgrade>& upgrades, std::string type) {
 }
 
 void Game::update_upgrades(float dt) {
+	for (Upgrade &upgrade : upgrades) {
+		//std::cout << upgrade.position.y << std::endl;
+		upgrade.position.y += 100 * dt;
+
+		if (upgrade.activated) {
+			//std::cout << "a";
+			upgrade.duration -= dt;
+
+			if (upgrade.duration <= 0.0f) {
+				//std::cout << "erase";
+				upgrade.activated = false;
+				if (upgrade.type == "sticky") {
+					//When eat two or more of the item
+					if (!is_other_upgrade_active(upgrades, "sticky")) {
+						ball->sticky = false;
+						player->color = glm::vec3(1.0f);
+					}
+				}
+				else if (upgrade.type == "passthrough") {
+					if (!is_other_upgrade_active(upgrades, "passthrough")) {
+						ball->passthrough = false;
+						player->color = glm::vec3(1.0f);
+					}
+				}
+				else if (upgrade.type == "confuse") {
+					if (!is_other_upgrade_active(upgrades, "confuse")) {
+						postprocessor->confuse = false;
+					}
+				}
+				else if (upgrade.type == "chaos") {
+					if (!is_other_upgrade_active(upgrades, "chaos")) {
+						postprocessor->chaos = false;
+					}
+				}
+			}
+		}
+	}
 	for (Upgrade &upgrade : upgrades) {
 		//std::cout << upgrade.position.y << std::endl;
 		upgrade.position.y += 100 * dt;

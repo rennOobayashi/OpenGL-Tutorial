@@ -16,6 +16,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <irrKlang.h>
 
 #include <ft2build.h>
 #include FT_FREETYPE_H
@@ -63,6 +64,8 @@ private:
 	PostProcessor* postprocessor;
 
 	std::vector<Upgrade> upgrades;
+
+	irrklang::ISoundEngine* sound_engine;
 
 	bool check_collision(GameObject& ball, GameObject& object);
 	Collision check_collision(Ball &ball, GameObject &object);

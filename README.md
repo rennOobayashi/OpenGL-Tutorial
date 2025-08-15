@@ -3,6 +3,7 @@ It's only for study OpenGL.
 I will update as much as possible outside of school or part-time hours.
 
 code from https://learnopengl.com
+irrKlang code from https://github.com/jonas2602/irrKlang
 
 大学の開講により更新が遅れることがあります。
 Updates may be delayed due to university course openings.
