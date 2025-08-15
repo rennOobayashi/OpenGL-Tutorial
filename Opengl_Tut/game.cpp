@@ -106,7 +106,7 @@ void Game::init() {
 	shake_time = 0.0f;
 
 	sound_engine = irrklang::createIrrKlangDevice();
-	sound_engine->play2D("breakout.mp3", true);
+	sound_engine->play2D("sound/breakout.mp3", true);
 }
 
 void Game::update() {
@@ -259,10 +259,12 @@ void Game::do_collisions() {
 					spawn_upgrade(box);
 					box.destroyed = true;
 					speed += 0.01f;
+					sound_engine->play2D("sound/solid.wav", false);
 				}
 				else {
 					shake_time = 0.05f;
 					postprocessor->shake = true;
+					sound_engine->play2D("sound/bleep.wav", false);
 				}
 
 				Direction dir = std::get<1>(collision);
@@ -310,6 +312,7 @@ void Game::do_collisions() {
 				activate_upgrade(upgrade);
 				upgrade.destroyed = true;
 				upgrade.activated = true;
+				sound_engine->play2D("sound/powerup.wav", false);
 			}
 		}
 	}
@@ -329,6 +332,7 @@ void Game::do_collisions() {
 		ball->velocity.y = -1.0f * abs(ball->velocity.y);
 		ball->velocity = glm::normalize(ball->velocity) * glm::length(before_velocity);
 		ball->stuck = ball->sticky;
+		sound_engine->play2D("sound/solid.wav", false);
 	}
 }
 
