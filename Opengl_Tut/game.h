@@ -9,6 +9,7 @@
 #include "particlegenerator.h"
 #include "postprocessing.h"
 #include "upgrade.h"
+#include "textrenderer.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -17,9 +18,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <irrKlang.h>
-
-#include <ft2build.h>
-#include FT_FREETYPE_H
 
 #include <random>
 #include <fstream>
@@ -66,6 +64,10 @@ private:
 	std::vector<Upgrade> upgrades;
 
 	irrklang::ISoundEngine* sound_engine;
+
+	unsigned int lifes;
+	unsigned int score;
+	float time;
 
 	bool check_collision(GameObject& ball, GameObject& object);
 	Collision check_collision(Ball &ball, GameObject &object);

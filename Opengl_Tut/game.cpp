@@ -107,10 +107,12 @@ void Game::init() {
 
 	sound_engine = irrklang::createIrrKlangDevice();
 	sound_engine->play2D("sound/breakout.mp3", true);
+
+	lifes = 3;
+	score = 0;
 }
 
 void Game::update() {
-	
 	while (!glfwWindowShouldClose(window)) {
 
 		float current_frame = (float)glfwGetTime();
@@ -209,6 +211,11 @@ void Game::process_input(GLFWwindow* window, float dt) {
 			if (player->position.x <= width - player->size.x) {
 				ball->stuck = false;
 			}
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+			std::cout << "EXIT" << std::endl;
+			glfwSetWindowShouldClose(window, true);
 		}
 	}
 }
