@@ -144,6 +144,7 @@
     <ClCompile Include="resourcemanager.cpp" />
     <ClCompile Include="spriterenderer.cpp" />
     <ClCompile Include="stb_image.c" />
+    <ClCompile Include="textrenderer.cpp" />
     <ClCompile Include="texture.cpp" />
     <ClCompile Include="upgrade.cpp" />
   </ItemGroup>
@@ -158,6 +159,7 @@
     <ClInclude Include="shader.h" />
     <ClInclude Include="spriterenderer.h" />
     <ClInclude Include="stb_image.h" />
+    <ClInclude Include="textrenderer.h" />
     <ClInclude Include="texture.h" />
     <ClInclude Include="upgrade.h" />
   </ItemGroup>

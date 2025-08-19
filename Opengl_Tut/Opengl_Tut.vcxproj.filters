@@ -54,6 +54,9 @@
     <ClCompile Include="upgrade.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="textrenderer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="shader.h">
@@ -90,6 +93,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="upgrade.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="textrenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

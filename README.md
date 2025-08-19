@@ -3,6 +3,7 @@ It's only for study OpenGL.
 I will update as much as possible outside of school or part-time hours.
 
 code from https://learnopengl.com
+
 irrKlang code from https://github.com/jonas2602/irrKlang
 
 大学の開講により更新が遅れることがあります。
@@ -28,3 +29,6 @@ gameクラスのコンストラクタの初期化を忘れてしまいました�
 
 7/23
 コンピューターシステムのグラフィックカードをAMDのRX9060XTに変更しました。 しかし、直前まで使用したグラフィックカードがNVIDIAのRTX4060だったので、現在グラフィックドライバーの問題があります。 現在はAMD cleanup utilityとDDUですべてのドライバーを削除した後、AMD Adrenalinを再インストールしてすぐには問題を解決しましたが、今後アップデートが遅れる可能性がありますのでご了承ください。
+
+8/19
+learnopengl.comのサーバーに問題があるようです・・・状況を見けから回復したら、すぐに更新します。
