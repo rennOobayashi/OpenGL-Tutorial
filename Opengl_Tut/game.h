@@ -65,9 +65,12 @@ private:
 
 	irrklang::ISoundEngine* sound_engine;
 
+	TextRenderer* text_renderer;
+
 	unsigned int lifes;
 	unsigned int score;
 	float time;
+	bool clear_level;
 
 	bool check_collision(GameObject& ball, GameObject& object);
 	Collision check_collision(Ball &ball, GameObject &object);

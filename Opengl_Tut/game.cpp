@@ -107,9 +107,13 @@ void Game::init() {
 
 	sound_engine = irrklang::createIrrKlangDevice();
 	sound_engine->play2D("sound/breakout.mp3", true);
+	
+	text_renderer = new TextRenderer(width, height);
+	text_renderer->load("fonts/arial.ttf", 24);
 
 	lifes = 3;
 	score = 0;
+	clear_level = false;a
 }
 
 void Game::update() {
@@ -367,7 +371,8 @@ Direction Game::vector_direction(glm::vec2 target) {
 }
 
 void Game::reset() {
-	switch (level) {
+	if (clear_level) {
+		switch (level) {
 		case 0: levels[0].load("level/1.lvl", width, height / 2);
 			break;
 		case 1: levels[1].load("level/2.lvl", width, height / 2);
@@ -376,6 +381,8 @@ void Game::reset() {
 			break;
 		case 3: levels[3].load("level/4.lvl", width, height / 2);
 			break;
+		}
+		clear_level = false;
 	}
 
 	player->size = player_size;

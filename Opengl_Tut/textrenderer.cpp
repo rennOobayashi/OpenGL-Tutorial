@@ -5,12 +5,6 @@ TextRenderer::TextRenderer(unsigned  int _width, unsigned int _height) {
 }
 
 TextRenderer::~TextRenderer() {
-	if (face) {
-		FT_Done_Face(face);
-	}
-	if (ft) {
-		FT_Done_FreeType(ft);
-	}
 }
 
 void TextRenderer::init(unsigned  int _width, unsigned int _height) {
@@ -69,5 +63,61 @@ void TextRenderer::load(std::string font, unsigned int font_size) {
 			glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),   //bearing
 			face->glyph->advance.x											 //advance
 		};
+
+		characters.insert(std::pair<char, Character>(c, character));
 	}
+
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (face) {
+		FT_Done_Face(face);
+	}
+	if (ft) {
+		FT_Done_FreeType(ft);
+	}
+}
+
+void TextRenderer::render_text(std::string text, float x, float y, float scale, glm::vec3 color) {
+	tshader.use();
+	tshader.set_vec3("text_color", color);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindVertexArray(vao);
+
+	std::string::const_iterator iter;
+
+	for (iter = text.begin(); iter != text.end(); ++iter) {
+		Character c = characters[*iter];
+
+		float xpos = x + c.bearing.x * scale;
+		//In this project, the y coordinate is range from top to bottom.
+		float ypos = y + (characters['H'].bearing.y - c.bearing.y) * scale;
+
+		float w = c.size.x * scale;
+		float h = c.size.y * scale;
+
+		float vertices[6][4] = {
+			{xpos    , ypos + h, 0.0f, 1.0f},
+			{xpos + w, ypos    , 1.0f, 0.0f},
+			{xpos    , ypos    , 0.0f, 0.0f},
+
+			{xpos    , ypos + h, 0.0f, 1.0f},
+			{xpos + w, ypos + h, 1.0f, 1.0f},
+			{xpos + w, ypos    , 1.0f, 0.0f}
+		};
+
+		glBindTexture(GL_TEXTURE_2D, c.texture_id);
+		glBindBuffer(GL_ARRAY_BUFFER, vbo);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+
+		//Move 6 bits to find the pixel unit of the corresponding character. 
+		//( (1/64) * 2^6 = 64 )
+		x += (c.advance >> 6) * scale;
+	}
+
+	glBindVertexArray(0);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }

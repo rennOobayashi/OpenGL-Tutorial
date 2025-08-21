@@ -34,7 +34,7 @@ public:
 	TextRenderer(unsigned int _width, unsigned int _height);
 	~TextRenderer();
 	void load(std::string font, unsigned int font_size);
-	void render_text(std::string text, float x, float y, float scale, glm::vec2 color = glm::vec3(1.0f));
+	void render_text(std::string text, float x, float y, float scale, glm::vec3 color = glm::vec3(1.0f));
 };
 
 #endif
