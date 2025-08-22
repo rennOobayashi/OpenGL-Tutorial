@@ -163,12 +163,14 @@ void Game::update() {
 			sound_delay += delta_time;
 		}
 
-		if (states == GAME_ACTIVE) {
+		if (states == GAME_ACTIVE && !ball->stuck) {
 			play_time += delta_time;
+			score += delta_time;
 		}
 
 		if (states == GAME_ACTIVE && levels[level].is_completed()) {
 			states = GAME_WIN;
+			score += 10000;
 		}
 
 		glfwSwapBuffers(window);
@@ -207,9 +209,12 @@ void Game::render() {
 		std::stringstream slife;
 		slife << lifes;
 
+		std::stringstream sscore;
+		sscore << int(score);
+
 		std::stringstream stime;
 		stime << int(play_time);
-		text_renderer->render_text("score: " + slife.str(), 5.0f, 5.0f, 1.0f);
+		text_renderer->render_text("Score: " + sscore.str(), 5.0f, 5.0f, 1.0f);
 		text_renderer->render_text("Lifes: " + slife.str(), 5.0f, 30.0f, 1.0f);
 		text_renderer->render_text("Time: " + stime.str(), 5.0f, height - 25.0f, 1.0f);
 	}
@@ -328,6 +333,7 @@ void Game::do_collisions() {
 					box.destroyed = true;
 					speed += 0.01f;
 					sound_engine->play2D("sound/solid.wav", false);
+					score += 100;
 				}
 				else {
 					shake_time = 0.05f;
@@ -384,6 +390,8 @@ void Game::do_collisions() {
 				if (sound_delay < 0.1f) {
 					sound_engine->play2D("sound/powerup.wav", false);
 				}
+
+				score += 500;
 			}
 		}
 	}

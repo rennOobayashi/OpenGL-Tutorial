@@ -72,7 +72,7 @@ private:
 	TextRenderer* text_renderer;
 
 	unsigned int lifes;
-	unsigned int score;
+	float score;
 	float play_time;
 	bool gameover;
 
