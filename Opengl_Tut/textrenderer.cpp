@@ -4,12 +4,9 @@ TextRenderer::TextRenderer(unsigned  int _width, unsigned int _height) {
 	init(_width, _height);
 }
 
-TextRenderer::~TextRenderer() {
-}
-
-void TextRenderer::init(unsigned  int _width, unsigned int _height) {
+void TextRenderer::init(unsigned int _width, unsigned int _height) {
 	tshader = ResourceManager::load_shader("geofragver/text_2d_vertex.vs", "geofragver/text_2d_fragment.fs", nullptr, "text");
-	tshader.use().set_mat4("projection", glm::ortho(0.0f, float(_width), float(_height), 0.0f), true);
+	tshader.set_mat4("projection", glm::ortho(0.0f, float(_width), float(_height), 0.0f), true);
 	tshader.set_int("text", 0);
 
 	glGenVertexArrays(1, &vao);
@@ -48,9 +45,11 @@ void TextRenderer::load(std::string font, unsigned int font_size) {
 
 		glGenTextures(1, &texture);
 		glBindTexture(GL_TEXTURE_2D, texture);
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, 
-			face->glyph->bitmap.width, face->glyph->bitmap.rows, 0, GL_RED, 
-			GL_UNSIGNED_INT, face->glyph->bitmap.buffer);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RED,
+			face->glyph->bitmap.width,
+			face->glyph->bitmap.rows,
+			0, GL_RED, GL_UNSIGNED_BYTE,
+			face->glyph->bitmap.buffer);
 
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
@@ -69,12 +68,8 @@ void TextRenderer::load(std::string font, unsigned int font_size) {
 
 	glBindTexture(GL_TEXTURE_2D, 0);
 
-	if (face) {
-		FT_Done_Face(face);
-	}
-	if (ft) {
-		FT_Done_FreeType(ft);
-	}
+	FT_Done_Face(face);
+	FT_Done_FreeType(ft);
 }
 
 void TextRenderer::render_text(std::string text, float x, float y, float scale, glm::vec3 color) {

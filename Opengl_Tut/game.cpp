@@ -16,6 +16,7 @@ Game::~Game() {
 	delete ball;
 	delete particles;
 	delete postprocessor;
+	delete text_renderer;
 }
 
 
@@ -43,6 +44,10 @@ void Game::init() {
 
 		return;
 	}
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
 	glm::mat4 projection = glm::ortho(0.0f, (float)width, (float)height, 0.0f, -1.0f, 1.0f);
 
 	ResourceManager::load_shader("geofragver/vertex.vs", "geofragver/fragment.fs", nullptr, "sprite");
@@ -113,7 +118,8 @@ void Game::init() {
 
 	lifes = 3;
 	score = 0;
-	clear_level = false;a
+	clear_level = false;
+	gameover = false;
 }
 
 void Game::update() {
@@ -139,6 +145,12 @@ void Game::update() {
 		}
 
 		if (ball->position.y >= height) {
+			--lifes;
+
+			if (lifes <= 0) {
+				gameover = true;
+			}
+
 			reset();
 		}
 
@@ -148,6 +160,7 @@ void Game::update() {
 		else {
 			postprocessor->shake = false;
 		}
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -179,6 +192,10 @@ void Game::render() {
 	postprocessor->end_render();
 
 	postprocessor->render(glfwGetTime());
+
+	std::stringstream ss;
+	ss << lifes;
+	text_renderer->render_text("lifes: " + ss.str(), 5.0f, 5.0f, 1.0f);
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -371,7 +388,7 @@ Direction Game::vector_direction(glm::vec2 target) {
 }
 
 void Game::reset() {
-	if (clear_level) {
+	if (gameover || clear_level) {
 		switch (level) {
 		case 0: levels[0].load("level/1.lvl", width, height / 2);
 			break;
@@ -383,6 +400,12 @@ void Game::reset() {
 			break;
 		}
 		clear_level = false;
+	}
+
+	if (gameover) {
+		lifes = 3;
+		score = 0;
+		gameover = false;
 	}
 
 	player->size = player_size;

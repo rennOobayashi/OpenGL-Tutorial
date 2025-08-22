@@ -23,6 +23,10 @@
 #include <fstream>
 #include <iostream>
 #include <vector>
+#include <algorithm>
+#include <sstream>
+#include <fstream>
+
 
 enum GameState {
 	GAME_ACTIVE, //0
@@ -71,6 +75,7 @@ private:
 	unsigned int score;
 	float time;
 	bool clear_level;
+	bool gameover;
 
 	bool check_collision(GameObject& ball, GameObject& object);
 	Collision check_collision(Ball &ball, GameObject &object);

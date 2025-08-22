@@ -1,5 +1,5 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 color;
 
 in vec2 texcoords;
 
@@ -9,5 +9,5 @@ uniform vec3 text_color;
 void main()
 {
     vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, texcoords).r);
-    FragColor = vec4(text_color, 1.0) * sampled;
+    color = vec4(text_color, 1.0) * sampled;
 }
