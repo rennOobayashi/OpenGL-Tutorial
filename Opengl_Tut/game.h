@@ -25,7 +25,6 @@
 #include <vector>
 #include <algorithm>
 #include <sstream>
-#include <fstream>
 
 
 enum GameState {
@@ -68,13 +67,13 @@ private:
 	std::vector<Upgrade> upgrades;
 
 	irrklang::ISoundEngine* sound_engine;
+	float sound_delay;
 
 	TextRenderer* text_renderer;
 
 	unsigned int lifes;
 	unsigned int score;
-	float time;
-	bool clear_level;
+	float play_time;
 	bool gameover;
 
 	bool check_collision(GameObject& ball, GameObject& object);

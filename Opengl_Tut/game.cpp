@@ -8,7 +8,7 @@ const glm::vec2 initial_ball_velcocity(100.0f, -350.0f);
 const float ball_radius = 12.5f;
 
 Game::Game(unsigned int _width, unsigned int _height) 
-	: states(GAME_ACTIVE), width(_width), height(_height) { }
+	: states(GAME_MENU), width(_width), height(_height) { }
 
 Game::~Game() {
 	delete renderer;
@@ -89,8 +89,7 @@ void Game::init() {
 	levels.push_back(level2);
 	levels.push_back(level3);
 	levels.push_back(level4);
-	level = 3;
-	states = GAME_ACTIVE;
+	level = 0;
 
 	glm::vec2 player_pos = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
 
@@ -112,13 +111,13 @@ void Game::init() {
 
 	sound_engine = irrklang::createIrrKlangDevice();
 	sound_engine->play2D("sound/breakout.mp3", true);
+	sound_delay = 0.0f;
 	
 	text_renderer = new TextRenderer(width, height);
 	text_renderer->load("fonts/arial.ttf", 24);
 
 	lifes = 3;
 	score = 0;
-	clear_level = false;
 	gameover = false;
 }
 
@@ -140,15 +139,14 @@ void Game::update() {
 		particles->update(delta_time, *ball, 2, glm::vec2(ball->radius / 2.0f));
 		update_upgrades(delta_time);
 
-		if (states == GAME_ACTIVE) {
-			render();
-		}
+		render();
 
-		if (ball->position.y >= height) {
+		if (ball->position.y >= height && states == GAME_ACTIVE) {
 			--lifes;
 
 			if (lifes <= 0) {
 				gameover = true;
+				states = GAME_MENU;
 			}
 
 			reset();
@@ -161,6 +159,18 @@ void Game::update() {
 			postprocessor->shake = false;
 		}
 
+		if (sound_delay < 0.1f) {
+			sound_delay += delta_time;
+		}
+
+		if (states == GAME_ACTIVE) {
+			play_time += delta_time;
+		}
+
+		if (states == GAME_ACTIVE && levels[level].is_completed()) {
+			states = GAME_WIN;
+		}
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -171,31 +181,47 @@ void Game::update() {
 
 
 void Game::render() {
-	postprocessor->begin_render();
+	if (states == GAME_ACTIVE || states == GAME_MENU || states == GAME_WIN) {
+		postprocessor->begin_render();
 
-	Texture tex = ResourceManager::get_texture("background");
-	renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
-	levels[level].draw(*renderer);
+		Texture tex = ResourceManager::get_texture("background");
+		renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
+		levels[level].draw(*renderer);
 
-	player->draw(*renderer);
-	
-	for (Upgrade& upgrade : upgrades) {
-		if (!upgrade.destroyed) {
-			//std::cout << "draw" << std::endl;
-			upgrade.draw(*renderer);
+		player->draw(*renderer);
+
+		for (Upgrade& upgrade : upgrades) {
+			if (!upgrade.destroyed) {
+				//std::cout << "draw" << std::endl;
+				upgrade.draw(*renderer);
+			}
 		}
+
+		particles->draw();
+		ball->draw(*renderer);
+
+		postprocessor->end_render();
+
+		postprocessor->render(glfwGetTime());
+
+		std::stringstream slife;
+		slife << lifes;
+
+		std::stringstream stime;
+		stime << int(play_time);
+		text_renderer->render_text("score: " + slife.str(), 5.0f, 5.0f, 1.0f);
+		text_renderer->render_text("Lifes: " + slife.str(), 5.0f, 30.0f, 1.0f);
+		text_renderer->render_text("Time: " + stime.str(), 5.0f, height - 25.0f, 1.0f);
 	}
 
-	particles->draw();
-	ball->draw(*renderer);
+	if (states == GAME_MENU) {
+		text_renderer->render_text("Press S to start", width / 2.0f - 150.0f, height / 2.0f, 1.5f);
+	}
 
-	postprocessor->end_render();
-
-	postprocessor->render(glfwGetTime());
-
-	std::stringstream ss;
-	ss << lifes;
-	text_renderer->render_text("lifes: " + ss.str(), 5.0f, 5.0f, 1.0f);
+	if (states == GAME_WIN) {
+		text_renderer->render_text("YOU WIN!!", width / 2.0f - 150.0f, height / 2.0f, 1.5f, glm::vec3(0.0f, 1.0f, 0.5f));
+		text_renderer->render_text("Press S to advence to next level!", width / 2.0f - 300.0f, height / 2.0f + 50.0f, 1.5f);
+	}
 }
 
 void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -203,6 +229,11 @@ void frame_buffer_size_callback(GLFWwindow* window, int width, int height) {
 }
 
 void Game::process_input(GLFWwindow* window, float dt) {
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
+		std::cout << "EXIT" << std::endl;
+		glfwSetWindowShouldClose(window, true);
+	}
+
 	if (states == GAME_ACTIVE) {
 		float velocity = player_velocity * dt;
 
@@ -233,10 +264,19 @@ void Game::process_input(GLFWwindow* window, float dt) {
 				ball->stuck = false;
 			}
 		}
-
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE)) {
-			std::cout << "EXIT" << std::endl;
-			glfwSetWindowShouldClose(window, true);
+	}
+	else if (states == GAME_MENU) {
+		if (glfwGetKey(window, GLFW_KEY_S)) {
+			std::cout << "Start game" << std::endl;
+			states = GAME_ACTIVE;
+		}
+	}
+	else {
+		if (glfwGetKey(window, GLFW_KEY_S)) {
+			std::cout << "next level" << std::endl;
+			++level;
+			reset();
+			states = GAME_MENU;
 		}
 	}
 }
@@ -340,7 +380,10 @@ void Game::do_collisions() {
 				activate_upgrade(upgrade);
 				upgrade.destroyed = true;
 				upgrade.activated = true;
-				sound_engine->play2D("sound/powerup.wav", false);
+
+				if (sound_delay < 0.1f) {
+					sound_engine->play2D("sound/powerup.wav", false);
+				}
 			}
 		}
 	}
@@ -388,7 +431,7 @@ Direction Game::vector_direction(glm::vec2 target) {
 }
 
 void Game::reset() {
-	if (gameover || clear_level) {
+	if (gameover || states == GAME_WIN) {
 		switch (level) {
 		case 0: levels[0].load("level/1.lvl", width, height / 2);
 			break;
@@ -399,7 +442,6 @@ void Game::reset() {
 		case 3: levels[3].load("level/4.lvl", width, height / 2);
 			break;
 		}
-		clear_level = false;
 	}
 
 	if (gameover) {
