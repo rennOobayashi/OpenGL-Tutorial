@@ -74,6 +74,7 @@ private:
 	unsigned int lifes;
 	float score;
 	float play_time;
+	float input_delay;
 	bool gameover;
 
 	bool check_collision(GameObject& ball, GameObject& object);

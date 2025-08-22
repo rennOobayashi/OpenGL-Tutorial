@@ -117,7 +117,8 @@ void Game::init() {
 	text_renderer->load("fonts/arial.ttf", 24);
 
 	lifes = 3;
-	score = 0;
+	score = 0.0f;
+	input_delay = 0.1f;
 	gameover = false;
 }
 
@@ -151,6 +152,7 @@ void Game::update() {
 
 			reset();
 		}
+		
 
 		if (shake_time > 0.0f) {
 			shake_time -= delta_time;
@@ -171,6 +173,10 @@ void Game::update() {
 		if (states == GAME_ACTIVE && levels[level].is_completed()) {
 			states = GAME_WIN;
 			score += 10000;
+		}
+
+		if (input_delay < 0.1f) {
+			input_delay += delta_time;
 		}
 
 		glfwSwapBuffers(window);
@@ -220,12 +226,12 @@ void Game::render() {
 	}
 
 	if (states == GAME_MENU) {
-		text_renderer->render_text("Press S to start", width / 2.0f - 150.0f, height / 2.0f, 1.5f);
+		text_renderer->render_text("Press Space bar to start", width / 2.0f - 150.0f, height / 2.0f, 1.5f);
 	}
 
 	if (states == GAME_WIN) {
 		text_renderer->render_text("YOU WIN!!", width / 2.0f - 150.0f, height / 2.0f, 1.5f, glm::vec3(0.0f, 1.0f, 0.5f));
-		text_renderer->render_text("Press S to advence to next level!", width / 2.0f - 300.0f, height / 2.0f + 50.0f, 1.5f);
+		text_renderer->render_text("Press Space bar to advence to next level!", width / 2.0f - 300.0f, height / 2.0f + 50.0f, 1.5f);
 	}
 }
 
@@ -263,7 +269,7 @@ void Game::process_input(GLFWwindow* window, float dt) {
 			}
 		}
 
-		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE) && input_delay > 0.1f) {
 			//Once you reach the right end, you won't move any further to the right.
 			if (player->position.x <= width - player->size.x) {
 				ball->stuck = false;
@@ -271,16 +277,23 @@ void Game::process_input(GLFWwindow* window, float dt) {
 		}
 	}
 	else if (states == GAME_MENU) {
-		if (glfwGetKey(window, GLFW_KEY_S)) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
 			std::cout << "Start game" << std::endl;
+			input_delay = 0.0f;
 			states = GAME_ACTIVE;
 		}
 	}
 	else {
-		if (glfwGetKey(window, GLFW_KEY_S)) {
+		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
 			std::cout << "next level" << std::endl;
-			++level;
+			if (level < 3) {
+				++level;
+			}
+			else {
+				level = rand() % 4;
+			}
 			reset();
+			input_delay = 0.0f;
 			states = GAME_MENU;
 		}
 	}
