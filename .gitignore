@@ -1,3 +1,7 @@
-.git
-.vs
-assimp
+*.pdb
+*.obj
+*.exe
+x64/
+Debug/
+.vs/
+*.ipch
