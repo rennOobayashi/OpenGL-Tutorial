@@ -47,7 +47,6 @@ class Game
 private:
 	GameState states;
 	unsigned int width, height;
-	unsigned int tex1;
 	float delta_time;
 	float last_frame;
 	float speed, player_speed;

@@ -174,7 +174,7 @@ public:
 
 		check_compile_errors(id, "PROGRAM");
 
-        //¿¬°á ÈÄ Á¦°Å
+        //ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½
         glDeleteShader(vertex);
         glDeleteShader(fragment);
 
@@ -183,4 +183,5 @@ public:
         }
     }
 };
+
 #endif
