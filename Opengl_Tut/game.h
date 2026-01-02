@@ -54,8 +54,8 @@ private:
 
 	GLFWwindow* window;
 	SpriteRenderer* renderer;
-	std::vector<GameLevel> levels;
-	unsigned int level;
+	//std::vector<GameLevel> levels;
+	//unsigned int level;
 
 	GameObject *player;
 	Ball* ball;

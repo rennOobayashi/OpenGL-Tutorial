@@ -60,36 +60,36 @@ void Game::init() {
 	ResourceManager::get_shader("particle").use().set_mat4("projection", projection);
 
 	//texture
-	ResourceManager::load_texture("texture/floor.png", true, "background");
-	ResourceManager::load_texture("texture/koronesuki.png", false, "ball");
-	ResourceManager::load_texture("texture/watashi.PNG", true, "block");
-	ResourceManager::load_texture("texture/brick.jpg", false, "solid_block");
+	ResourceManager::load_texture("texture/background_by_gemini.png", false, "background");
+	ResourceManager::load_texture("texture/ball.png", true, "ball");
+	ResourceManager::load_texture("texture/enemy.png", true, "block");
+	ResourceManager::load_texture("texture/enemy.png", true, "solid_block");
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
 	ResourceManager::load_texture("texture/particle.png", true, "particle");
 
-	ResourceManager::load_texture("texture/upgrade/speed.png", true, "speed");
-	ResourceManager::load_texture("texture/upgrade/sticky.png", true, "sticky");
-	ResourceManager::load_texture("texture/upgrade/passthrough.png", true, "passthrough");
-	ResourceManager::load_texture("texture/upgrade/increase.png", true, "increase");
-	ResourceManager::load_texture("texture/upgrade/confuse.png", true, "confuse");
-	ResourceManager::load_texture("texture/upgrade/chaos.png", true, "chaos");
+	ResourceManager::load_texture("texture/speed.png", true, "speed");
+	ResourceManager::load_texture("texture/sticky.png", true, "sticky");
+	ResourceManager::load_texture("texture/passthrough.png", true, "passthrough");
+	ResourceManager::load_texture("texture/increase.png", true, "increase");
+	ResourceManager::load_texture("texture/confuse.png", true, "confuse");
+	ResourceManager::load_texture("texture/chaos.png", true, "chaos");
 
 	//levels
-	GameLevel level1;
-	GameLevel level2;
-	GameLevel level3;
-	GameLevel level4;
+	//GameLevel level1;
+	//GameLevel level2;
+	//GameLevel level3;
+	//GameLevel level4;
 
-	level1.load("level/1.lvl", width, height / 2);
-	level2.load("level/2.lvl", width, height / 2);
-	level3.load("level/3.lvl", width, height / 2);
-	level4.load("level/4.lvl", width, height / 2);
+	//level1.load("level/1.lvl", width, height / 2);
+	//level2.load("level/2.lvl", width, height / 2);
+	//level3.load("level/3.lvl", width, height / 2);
+	//level4.load("level/4.lvl", width, height / 2);
 
-	levels.push_back(level1);
-	levels.push_back(level2);
-	levels.push_back(level3);
-	levels.push_back(level4);
-	level = 0;
+	//levels.push_back(level1);
+	//levels.push_back(level2);
+	//levels.push_back(level3);
+	//levels.push_back(level4);
+	//level = 0;
 
 	glm::vec2 player_pos = glm::vec2(width / 2.0f - player_size.x / 2.0f, height - player_size.y - 30.0f);
 
@@ -170,10 +170,10 @@ void Game::update() {
 			score += delta_time;
 		}
 
-		if (states == GAME_ACTIVE && levels[level].is_completed()) {
-			states = GAME_WIN;
-			score += 10000;
-		}
+		//if (states == GAME_ACTIVE && levels[level].is_completed()) {
+		//	states = GAME_WIN;
+		//	score += 10000;
+		//}
 
 		if (input_delay < 0.1f) {
 			input_delay += delta_time;
@@ -194,7 +194,7 @@ void Game::render() {
 
 		Texture tex = ResourceManager::get_texture("background");
 		renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
-		levels[level].draw(*renderer);
+		//levels[level].draw(*renderer);
 
 		player->draw(*renderer);
 
@@ -283,20 +283,20 @@ void Game::process_input(GLFWwindow* window, float dt) {
 			states = GAME_ACTIVE;
 		}
 	}
-	else {
-		if (glfwGetKey(window, GLFW_KEY_SPACE)) {
-			std::cout << "next level" << std::endl;
-			if (level < 3) {
-				++level;
-			}
-			else {
-				level = rand() % 4;
-			}
-			reset();
-			input_delay = 0.0f;
-			states = GAME_MENU;
-		}
-	}
+	//else {
+	//	if (glfwGetKey(window, GLFW_KEY_SPACE)) {
+	//		std::cout << "next level" << std::endl;
+	//		if (level < 3) {
+	//			++level;
+	//		}
+	//		else {
+	//			level = rand() % 4;
+	//		}
+	//		reset();
+	//		input_delay = 0.0f;
+	//		states = GAME_MENU;
+	//	}
+	//}
 }
 
 bool Game::check_collision(GameObject& object1, GameObject& object2) // AABB - AABB collision
@@ -336,58 +336,58 @@ Collision Game::check_collision(Ball& ball, GameObject& object) {
 
 
 void Game::do_collisions() {
-	for (GameObject& box : levels[level].bricks) {
-		if (!box.destroyed) {
-			Collision collision = check_collision(*ball, box);
-			//if collided
-			if (std::get<0>(collision)) {
-				if (!box.is_solid) {
-					spawn_upgrade(box);
-					box.destroyed = true;
-					speed += 0.01f;
-					sound_engine->play2D("sound/solid.wav", false);
-					score += 100;
-				}
-				else {
-					shake_time = 0.05f;
-					postprocessor->shake = true;
-					sound_engine->play2D("sound/bleep.wav", false);
-				}
+	//for (GameObject& box : levels[level].bricks) {
+	//	if (!box.destroyed) {
+	//		Collision collision = check_collision(*ball, box);
+	//		//if collided
+	//		if (std::get<0>(collision)) {
+	//			if (!box.is_solid) {
+	//				spawn_upgrade(box);
+	//				box.destroyed = true;
+	//				speed += 0.01f;
+	//				sound_engine->play2D("sound/solid.wav", false);
+	//				score += 100;
+	//			}
+	//			else {
+	//				shake_time = 0.05f;
+	//				postprocessor->shake = true;
+	//				sound_engine->play2D("sound/bleep.wav", false);
+	//			}
 
-				Direction dir = std::get<1>(collision);
+	//			Direction dir = std::get<1>(collision);
 
-				glm::vec2 diff_vec = std::get<2>(collision);
+	//			glm::vec2 diff_vec = std::get<2>(collision);
 
-				if (!(ball->passthrough && !box.is_solid)) {
-					if (dir == LEFT || dir == RIGHT) {
-						ball->velocity.x = -ball->velocity.x;
+	//			if (!(ball->passthrough && !box.is_solid)) {
+	//				if (dir == LEFT || dir == RIGHT) {
+	//					ball->velocity.x = -ball->velocity.x;
 
-						//relocate
-						float penetration = ball->radius - std::abs(diff_vec.x);
+	//					//relocate
+	//					float penetration = ball->radius - std::abs(diff_vec.x);
 
-						if (dir == LEFT) {
-							ball->position.x += penetration; //move ball right
-						}
-						else {
-							ball->position.x -= penetration; //move ball left
-						}
-					}
-					else {
-						ball->velocity.y = -ball->velocity.y;
+	//					if (dir == LEFT) {
+	//						ball->position.x += penetration; //move ball right
+	//					}
+	//					else {
+	//						ball->position.x -= penetration; //move ball left
+	//					}
+	//				}
+	//				else {
+	//					ball->velocity.y = -ball->velocity.y;
 
-						float penetration = ball->radius - std::abs(diff_vec.x);
+	//					float penetration = ball->radius - std::abs(diff_vec.x);
 
-						if (dir == UP) {
-							ball->position.y -= penetration;  //move ball down
-						}
-						else {
-							ball->position.y += penetration;  //move ball up
-						}
-					}
-				}
-			}
-		}
-	}
+	//					if (dir == UP) {
+	//						ball->position.y -= penetration;  //move ball down
+	//					}
+	//					else {
+	//						ball->position.y += penetration;  //move ball up
+	//					}
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
 	
 	for (Upgrade& upgrade : upgrades) {
 		if (!upgrade.destroyed) {
@@ -452,18 +452,18 @@ Direction Game::vector_direction(glm::vec2 target) {
 }
 
 void Game::reset() {
-	if (gameover || states == GAME_WIN) {
-		switch (level) {
-		case 0: levels[0].load("level/1.lvl", width, height / 2);
-			break;
-		case 1: levels[1].load("level/2.lvl", width, height / 2);
-			break;
-		case 2: levels[2].load("level/3.lvl", width, height / 2);
-			break;
-		case 3: levels[3].load("level/4.lvl", width, height / 2);
-			break;
-		}
-	}
+	//if (gameover || states == GAME_WIN) {
+	//	switch (level) {
+	//	case 0: levels[0].load("level/1.lvl", width, height / 2);
+	//		break;
+	//	case 1: levels[1].load("level/2.lvl", width, height / 2);
+	//		break;
+	//	case 2: levels[2].load("level/3.lvl", width, height / 2);
+	//		break;
+	//	case 3: levels[3].load("level/4.lvl", width, height / 2);
+	//		break;
+	//	}
+	//}
 
 	if (gameover) {
 		lifes = 3;
