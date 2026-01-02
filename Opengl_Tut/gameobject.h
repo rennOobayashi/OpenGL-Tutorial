@@ -15,6 +15,8 @@ public:
 	float rotation;
 	bool is_solid;
 	bool destroyed;
+	bool flipX;
+	bool flipY;
 	Texture sprite;
 	
 	GameObject();

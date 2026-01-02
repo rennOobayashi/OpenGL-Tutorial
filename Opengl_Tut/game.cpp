@@ -62,8 +62,9 @@ void Game::init() {
 	//texture
 	ResourceManager::load_texture("texture/background_by_gemini.png", false, "background");
 	ResourceManager::load_texture("texture/ball.png", true, "ball");
-	ResourceManager::load_texture("texture/enemy.png", true, "block");
-	ResourceManager::load_texture("texture/enemy.png", true, "solid_block");
+	ResourceManager::load_texture("texture/enemy.png", true, "enemy");
+	//ResourceManager::load_texture("texture/enemy.png", true, "block");
+	//ResourceManager::load_texture("texture/enemy.png", true, "solid_block");
 	ResourceManager::load_texture("texture/paddle.png", true, "player");
 	ResourceManager::load_texture("texture/particle.png", true, "particle");
 
@@ -120,6 +121,13 @@ void Game::init() {
 	score = 0.0f;
 	input_delay = 0.1f;
 	gameover = false;
+
+	enemy = new GameObject(glm::vec2(0.0f, 0.0f), glm::vec2(60.0f, 60.0f), ResourceManager::get_texture("enemy"));
+	enemy->flipY = true;
+
+	enemy_spawn_timer = 60.0f;
+	enemy_spawn_delay = 1.0f;
+
 }
 
 void Game::update() {
@@ -139,6 +147,20 @@ void Game::update() {
 		do_collisions();
 		particles->update(delta_time, *ball, 2, glm::vec2(ball->radius / 2.0f));
 		update_upgrades(delta_time);
+
+		if (states == GAME_ACTIVE && enemy_spawn_timer >= enemy_spawn_delay) {
+			int r = rand() % (width - (int)enemy->size.x);
+			enemy->position.x = (float)r;
+
+			enemies.push_back(*enemy);
+
+			enemy_spawn_timer = 0.0f;
+
+			std::cout << "Spawn Enemy" << std::endl;
+		}
+		else if(states == GAME_ACTIVE) {
+			enemy_spawn_timer += delta_time;
+		}
 
 		render();
 
@@ -195,6 +217,10 @@ void Game::render() {
 		Texture tex = ResourceManager::get_texture("background");
 		renderer->draw_sprite(tex, glm::vec2(0.0f, 0.0f), glm::vec2(width, height), 0.0f);
 		//levels[level].draw(*renderer);
+
+		for (GameObject& e : enemies) {
+			e.draw(*renderer);
+		}
 
 		player->draw(*renderer);
 

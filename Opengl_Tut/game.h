@@ -3,7 +3,7 @@
 
 #include "spriterenderer.h"
 #include "resourcemanager.h"
-#include "gamelevel.h"
+//#include "gamelevel.h"
 #include "texture.h"
 #include "ballobject.h"
 #include "particlegenerator.h"
@@ -45,6 +45,7 @@ typedef std::tuple<bool, Direction, glm::vec2> Collision;
 class Game 
 {
 private:
+	std::vector<GameObject> enemies;
 	GameState states;
 	unsigned int width, height;
 	float delta_time;
@@ -60,6 +61,8 @@ private:
 	GameObject *player;
 	Ball* ball;
 
+	GameObject *enemy;
+
 	ParticleGenerator* particles;
 	PostProcessor* postprocessor;
 
@@ -74,6 +77,8 @@ private:
 	float score;
 	float play_time;
 	float input_delay;
+	float enemy_spawn_timer;
+	float enemy_spawn_delay;
 	bool gameover;
 
 	bool check_collision(GameObject& ball, GameObject& object);

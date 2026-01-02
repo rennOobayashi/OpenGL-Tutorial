@@ -137,7 +137,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\..\glad\src\glad.c" />
     <ClCompile Include="ballobject.cpp" />
-    <ClCompile Include="Enemy.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="gamelevel.cpp" />
     <ClCompile Include="gameobject.cpp" />
@@ -153,7 +152,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ballobject.h" />
-    <ClInclude Include="Enemy.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="gamelevel.h" />
     <ClInclude Include="gameobject.h" />
