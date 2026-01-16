@@ -34,9 +34,9 @@ enum GameState {
 };
 
 enum Direction {
-	UP, 
-	DOWN, 
-	LEFT, 
+	UP,
+	DOWN,
+	LEFT,
 	RIGHT
 };
 
@@ -75,6 +75,7 @@ private:
 
 	unsigned int lifes;
 	float score;
+	float level_score;
 	float play_time;
 	float input_delay;
 	float enemy_spawn_timer;

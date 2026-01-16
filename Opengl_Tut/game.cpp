@@ -122,11 +122,12 @@ void Game::init() {
 	input_delay = 0.1f;
 	gameover = false;
 
-	enemy = new GameObject(glm::vec2(0.0f, 0.0f), glm::vec2(60.0f, 60.0f), ResourceManager::get_texture("enemy"));
-	enemy->flipY = true;
+	enemy = new GameObject(glm::vec2(0.0f, 0.0f), glm::vec2(100.0f), ResourceManager::get_texture("enemy"));
+	//enemy->flipY = true;
+	enemy->velocity = glm::vec2(0.0f, 50.0f);
 
 	enemy_spawn_timer = 60.0f;
-	enemy_spawn_delay = 1.0f;
+	enemy_spawn_delay = 3.0f;
 
 }
 
@@ -192,6 +193,16 @@ void Game::update() {
 			score += delta_time;
 		}
 
+		if (score >= level_score) {
+			level_score += 1000.0f;
+			if (enemy_spawn_delay <= 1.0f) {
+				enemy_spawn_delay -= 0.1f;
+			}
+			if (enemy->velocity.y <= 200.0f) {
+				enemy->velocity.y += 10.0f;
+			}
+		}
+
 		//if (states == GAME_ACTIVE && levels[level].is_completed()) {
 		//	states = GAME_WIN;
 		//	score += 10000;
@@ -220,6 +231,7 @@ void Game::render() {
 
 		for (GameObject& e : enemies) {
 			e.draw(*renderer);
+			e.position += e.velocity * delta_time;
 		}
 
 		player->draw(*renderer);
@@ -362,58 +374,105 @@ Collision Game::check_collision(Ball& ball, GameObject& object) {
 
 
 void Game::do_collisions() {
-	//for (GameObject& box : levels[level].bricks) {
-	//	if (!box.destroyed) {
-	//		Collision collision = check_collision(*ball, box);
-	//		//if collided
-	//		if (std::get<0>(collision)) {
-	//			if (!box.is_solid) {
-	//				spawn_upgrade(box);
-	//				box.destroyed = true;
-	//				speed += 0.01f;
-	//				sound_engine->play2D("sound/solid.wav", false);
-	//				score += 100;
-	//			}
-	//			else {
-	//				shake_time = 0.05f;
-	//				postprocessor->shake = true;
-	//				sound_engine->play2D("sound/bleep.wav", false);
-	//			}
+	/*for (GameObject& box : levels[level].bricks) {
+		if (!box.destroyed) {
+			Collision collision = check_collision(*ball, box);
+			//if collided
+			if (std::get<0>(collision)) {
+				if (!box.is_solid) {
+					spawn_upgrade(box);
+					box.destroyed = true;
+					speed += 0.01f;
+					sound_engine->play2D("sound/solid.wav", false);
+					score += 100;
+				}
+				else {
+					shake_time = 0.05f;
+					postprocessor->shake = true;
+					sound_engine->play2D("sound/bleep.wav", false);
+				}
 
-	//			Direction dir = std::get<1>(collision);
+				Direction dir = std::get<1>(collision);
 
-	//			glm::vec2 diff_vec = std::get<2>(collision);
+				glm::vec2 diff_vec = std::get<2>(collision);
 
-	//			if (!(ball->passthrough && !box.is_solid)) {
-	//				if (dir == LEFT || dir == RIGHT) {
-	//					ball->velocity.x = -ball->velocity.x;
+				if (!(ball->passthrough && !box.is_solid)) {
+					if (dir == LEFT || dir == RIGHT) {
+						ball->velocity.x = -ball->velocity.x;
 
-	//					//relocate
-	//					float penetration = ball->radius - std::abs(diff_vec.x);
+						//relocate
+						float penetration = ball->radius - std::abs(diff_vec.x);
 
-	//					if (dir == LEFT) {
-	//						ball->position.x += penetration; //move ball right
-	//					}
-	//					else {
-	//						ball->position.x -= penetration; //move ball left
-	//					}
-	//				}
-	//				else {
-	//					ball->velocity.y = -ball->velocity.y;
+						if (dir == LEFT) {
+							ball->position.x += penetration; //move ball right
+						}
+						else {
+							ball->position.x -= penetration; //move ball left
+						}
+					}
+					else {
+						ball->velocity.y = -ball->velocity.y;
 
-	//					float penetration = ball->radius - std::abs(diff_vec.x);
+						float penetration = ball->radius - std::abs(diff_vec.x);
 
-	//					if (dir == UP) {
-	//						ball->position.y -= penetration;  //move ball down
-	//					}
-	//					else {
-	//						ball->position.y += penetration;  //move ball up
-	//					}
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
+						if (dir == UP) {
+							ball->position.y -= penetration;  //move ball down
+						}
+						else {
+							ball->position.y += penetration;  //move ball up
+						}
+					}
+				}
+			}
+		}
+	}*/
+
+	if (!(ball->stuck)) {
+		for (GameObject& e : enemies) {
+			Collision collision = check_collision(*ball, e);
+			//if collided
+			if (std::get<0>(collision)) {
+				std::cout << "hit (Enemy: " << e.position.x << ", " << e.position.y << ", " << ball->position.x << ", Player: " << ball->position.y << ")" << std::endl;
+				spawn_upgrade(e);
+				speed += 0.01f;
+				sound_engine->play2D("sound/solid.wav", false);
+				score += 100;
+
+				Direction dir = std::get<1>(collision);
+
+				glm::vec2 diff_vec = std::get<2>(collision);
+
+				if (!(ball->passthrough)) {
+					if (dir == LEFT || dir == RIGHT) {
+						ball->velocity.x = -ball->velocity.x;
+
+						//relocate
+						float penetration = ball->radius - std::abs(diff_vec.x);
+
+						if (dir == LEFT) {
+							ball->position.x += penetration; //move ball right
+						}
+						else {
+							ball->position.x -= penetration; //move ball left
+						}
+					}
+					else {
+						ball->velocity.y = -ball->velocity.y;
+
+						float penetration = ball->radius - std::abs(diff_vec.y);
+
+						if (dir == UP) {
+							ball->position.y -= penetration;  //move ball down
+						}
+						else {
+							ball->position.y += penetration;  //move ball up
+						}
+						std::cout << diff_vec.y << std::endl;
+					}
+				}
+			}
+		}
+	}
 	
 	for (Upgrade& upgrade : upgrades) {
 		if (!upgrade.destroyed) {
