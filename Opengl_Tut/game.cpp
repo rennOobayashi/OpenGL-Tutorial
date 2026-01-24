@@ -112,6 +112,7 @@ void Game::init() {
 
 	sound_engine = irrklang::createIrrKlangDevice();
 	sound_engine->play2D("sound/breakout.mp3", true);
+	sound_engine->setSoundVolume(0.3f);
 	sound_delay = 0.0f;
 	
 	text_renderer = new TextRenderer(width, height);
@@ -351,15 +352,9 @@ bool Game::check_collision(GameObject& object1, GameObject& object2) // AABB - A
 Collision Game::check_collision(Ball& ball, GameObject& object) {
 	//ball's center
 	glm::vec2 center(ball.position + ball.radius);
-	glm::vec2 aabb_half_extents;
 	//calculate aabb info
-	if (object.size.y < 0) {
-		aabb_half_extents = glm::vec2(object.size.x / 2.0f, -object.size.y / 2.0f);
-	}
-	else {
-		aabb_half_extents = glm::vec2(object.size.x / 2.0f, object.size.y / 2.0f);
-	}
-	glm::vec2 aabb_center(object.position.x + aabb_half_extents.x, object.position.y + aabb_half_extents.y);
+	glm::vec2 aabb_half_extents(glm::abs(object.size) / 2.0f);
+	glm::vec2 aabb_center(object.position + (object.size / 2.0f));
 	//get difference between ball's center and aabb's center
 	glm::vec2 difference = center - aabb_center;
 	glm::vec2 clamped = glm::clamp(difference, -aabb_half_extents, aabb_half_extents);
