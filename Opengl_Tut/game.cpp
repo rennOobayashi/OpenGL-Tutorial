@@ -474,6 +474,10 @@ void Game::do_collisions() {
 
 				enemies.erase(enemies.begin() + i);
 			}
+
+			if (enemies[i].position.y > height + enemy->size.y) {
+				enemies.erase(enemies.begin() + i);
+			}
 		}
 	}
 	
@@ -621,26 +625,32 @@ void Game::spawn_upgrade(GameObject& object) {
 void Game::activate_upgrade(Upgrade &upgrade) {
 	if (upgrade.type == "speed") {
 		ball->velocity *= 1.2f;
+		score += 10;
 	}
 	else if (upgrade.type == "sticky") {
 		ball->sticky = true;
 		player->color = glm::vec3(0.6f, 0.7f, 0.1f);
+		score += 10;
 	}
 	else if (upgrade.type == "passthrough") {
 		ball->passthrough = true;
 		player->color = glm::vec3(0.6f, 0.05f, 0.2f);
+		score += 10;
 	}
 	else if (upgrade.type == "increase") {
 		player->size.x += 50.0f;
+		score += 100;
 	}
 	else if (upgrade.type == "confuse") {
 		if (!postprocessor->confuse) {
 			postprocessor->confuse = true;
+			score += 200;
 		}
 	}
 	else if (upgrade.type == "chaos") {
 		if (!postprocessor->chaos) {
 			postprocessor->chaos = true;
+			score += 500;
 		}
 	}
 }
