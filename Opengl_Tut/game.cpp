@@ -124,10 +124,11 @@ void Game::init() {
 
 	enemy = new GameObject(glm::vec2(0.0f, 0.0f), glm::vec2(100.0f), ResourceManager::get_texture("enemy"));
 	//enemy->flipY = true;
+	enemy->size.y = -enemy->size.y;
 	enemy->velocity = glm::vec2(0.0f, 50.0f);
 
 	enemy_spawn_timer = 60.0f;
-	enemy_spawn_delay = 3.0f;
+	enemy_spawn_delay = 10.0f;
 
 }
 
@@ -195,7 +196,7 @@ void Game::update() {
 
 		if (score >= level_score) {
 			level_score += 1000.0f;
-			if (enemy_spawn_delay <= 1.0f) {
+			if (enemy_spawn_delay < 3.0f) {
 				enemy_spawn_delay -= 0.1f;
 			}
 			if (enemy->velocity.y <= 200.0f) {
@@ -350,8 +351,14 @@ bool Game::check_collision(GameObject& object1, GameObject& object2) // AABB - A
 Collision Game::check_collision(Ball& ball, GameObject& object) {
 	//ball's center
 	glm::vec2 center(ball.position + ball.radius);
+	glm::vec2 aabb_half_extents;
 	//calculate aabb info
-	glm::vec2 aabb_half_extents(object.size.x / 2.0f, object.size.y / 2.0f);
+	if (object.size.y < 0) {
+		aabb_half_extents = glm::vec2(object.size.x / 2.0f, -object.size.y / 2.0f);
+	}
+	else {
+		aabb_half_extents = glm::vec2(object.size.x / 2.0f, object.size.y / 2.0f);
+	}
 	glm::vec2 aabb_center(object.position.x + aabb_half_extents.x, object.position.y + aabb_half_extents.y);
 	//get difference between ball's center and aabb's center
 	glm::vec2 difference = center - aabb_center;
@@ -428,12 +435,11 @@ void Game::do_collisions() {
 	}*/
 
 	if (!(ball->stuck)) {
-		for (GameObject& e : enemies) {
-			Collision collision = check_collision(*ball, e);
+		for (int i = 0; i < enemies.size(); ++i) {
+			Collision collision = check_collision(*ball, enemies[i]);
 			//if collided
 			if (std::get<0>(collision)) {
-				std::cout << "hit (Enemy: " << e.position.x << ", " << e.position.y << ", " << ball->position.x << ", Player: " << ball->position.y << ")" << std::endl;
-				spawn_upgrade(e);
+				spawn_upgrade(enemies[i]);
 				speed += 0.01f;
 				sound_engine->play2D("sound/solid.wav", false);
 				score += 100;
@@ -470,6 +476,8 @@ void Game::do_collisions() {
 						std::cout << diff_vec.y << std::endl;
 					}
 				}
+
+				enemies.erase(enemies.begin() + i);
 			}
 		}
 	}
