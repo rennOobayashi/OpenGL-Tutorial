@@ -17,6 +17,7 @@ Game::~Game() {
 	delete particles;
 	delete postprocessor;
 	delete text_renderer;
+	enemies.clear();
 }
 
 
@@ -105,7 +106,7 @@ void Game::init() {
 	Shader shader = ResourceManager::get_shader("sprite");
 	Shader pshader = ResourceManager::get_shader("postprocessor");
 	renderer = new SpriteRenderer(shader);
-	particles = new ParticleGenerator(ResourceManager::get_shader("particle"), ResourceManager::get_texture("particle"), 400);
+	particles = new ParticleGenerator(ResourceManager::get_shader("particle"), ResourceManager::get_texture("particle"), 100);
 	postprocessor = new PostProcessor(pshader, width, height);
 
 	shake_time = 0.0f;
@@ -148,7 +149,7 @@ void Game::update() {
 		process_input(window, delta_time);
 		ball->move(delta_time, width, speed);
 		do_collisions();
-		particles->update(delta_time, *ball, 2, glm::vec2(ball->radius / 2.0f));
+		particles->update(delta_time, *ball, 1, glm::vec2(ball->radius / 2.0f));
 		update_upgrades(delta_time);
 
 		if (states == GAME_ACTIVE && enemy_spawn_timer >= enemy_spawn_delay) {

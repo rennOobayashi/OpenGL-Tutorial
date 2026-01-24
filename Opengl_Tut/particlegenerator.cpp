@@ -80,8 +80,8 @@ void ParticleGenerator::respawn_particle(Particle& particle, GameObject& object,
 	float rcolor = 0.7f + ((rand() % 100) / 100.0f);
 	particle.position = object.position + random + offset;
 	particle.color = glm::vec4(rcolor, rcolor, rcolor, 1.0f);
-	particle.life = 0.15f;
-	particle.velocity = object.velocity * 0.1f;
+	particle.life = 0.1f;
+	particle.velocity = object.velocity * 0.2f;
 }
 
 void ParticleGenerator::draw() {
